@@ -1,0 +1,22 @@
+---
+name: Go Lint
+
+on:
+  workflow_call:
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+
+      - name: Lint Go
+        uses: golangci/golangci-lint-action@v9
