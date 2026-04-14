@@ -17,7 +17,7 @@ on:
 
 jobs:
   go-build:
-    name: Lint
+    name: Go Build
     runs-on: ubuntu-latest
     steps:
       - name: Registry login
@@ -28,7 +28,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout
-          uses: actions/checkout@v6
+        uses: actions/checkout@v6
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -46,13 +46,23 @@ jobs:
         run: |
           ${{ inputs.build-command }}
 
-      - name: Set up Docker Buildx
+      - name: Setup Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Build and push image
+      - name: Build and push
         uses: docker/build-push-action@v7
+        id: build
         with:
           context: .
           push: true
           sbom: true
           tags: ${{ inputs.registry }}/${{ github.repository }}:${{ env.tag }}
+
+      - name: Sign image
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY \
+            ${{ inputs.registry }}/${{ github.repository }}:${{ env.tag }} \
+            ${{ inputs.registry }}/${{ github.repository }}@${{ steps.build.outputs.digest }}
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
