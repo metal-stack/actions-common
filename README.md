@@ -21,7 +21,7 @@ on:
       - main
 ```
 
-Usually, we also expect to pass on secrets to the inherited workflow actions using `
+Usually, we also expect to pass on secrets to the inherited workflow actions using `secrets: inherit`.
 
 ## Workflows
 
@@ -29,7 +29,7 @@ Usually, we also expect to pass on secrets to the inherited workflow actions usi
 
 #### Release Drafter `.github/workflows/release-drafter.yaml`
 
-Please note that it does not seem possible with Github to provide a shared `release-drafter.yml` configuration for all repositories. It still makes sense to use the common action in order to manage the version from one location.
+Please note that it does not seem possible with Github to provide a shared `release-drafter.yml` configuration for all repositories. It still makes sense to use the common action in order to manage the action's version from one location.
 
 ```yaml
 jobs:
