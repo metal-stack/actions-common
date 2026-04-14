@@ -54,6 +54,9 @@ jobs:
 Builds a Go binary and publishes it as a docker container image, including:
 
 - Image tag format for different release actions
+  - `release`: `<release-tag>`
+  - `push`: `branch-<branch-name>`
+  - `pull_request`: `pr-<pull-request-number>-<branch-name>`
 - Embedding SBOM using Buildx
 - Signing the container image using [cosign](https://github.com/sigstore/cosign)
 
@@ -65,5 +68,6 @@ jobs:
     with:
       build-command: make
       registry: ghcr.io
-      registry_username: ${{ github.actor }}
+      registry-username: ${{ github.actor }}
+      image-name: ${{ github.repository }}
 ```
