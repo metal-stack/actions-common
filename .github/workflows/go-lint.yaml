@@ -5,8 +5,8 @@ on:
   workflow_call:
 
 jobs:
-  lint:
-    name: Lint
+  go-lint:
+    name: Run golangci-lint
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -16,6 +16,7 @@ jobs:
         uses: actions/setup-go@v6
         with:
           go-version-file: 'go.mod'
+          # TODO: check if this is still necessary:
           cache: false
 
       - name: Lint Go
