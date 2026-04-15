@@ -57,7 +57,7 @@ env:
 
 jobs:
   go-lint:
-    name: Run golangci-lint
+    name: Go Lint
     runs-on: ubuntu-latest
     if: "${{ inputs.lint }}"
     steps:
@@ -73,7 +73,7 @@ jobs:
         uses: golangci/golangci-lint-action@v9
 
   go-test:
-    name: Go test
+    name: Go Test
     runs-on: ubuntu-latest
     if: "${{ inputs.test }}"
     steps:
