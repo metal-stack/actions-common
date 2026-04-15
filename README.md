@@ -25,9 +25,7 @@ Usually, we also expect to pass on secrets to the inherited workflow actions usi
 
 ## Workflows
 
-### Generic
-
-#### Spelling `.github/workflows/spell-check.yaml`
+### Spelling `.github/workflows/spell-check.yaml`
 
 Runs spell checking using [typos](https://github.com/crate-ci/typos).
 
@@ -37,7 +35,7 @@ jobs:
     uses: metal-stack/actions-common/.github/workflows/spell-check.yaml@main
 ```
 
-#### Release Drafter `.github/workflows/release-drafter.yaml`
+### Release Drafter `.github/workflows/release-drafter.yaml`
 
 Please note that it does not seem possible with Github to provide a shared `release-drafter.yml` configuration for all repositories. It still makes sense to use the common action in order to manage the action's version from one location.
 
@@ -47,7 +45,38 @@ jobs:
     uses: metal-stack/actions-common/.github/workflows/release-drafter.yaml@main
 ```
 
-#### Release Assets `.github/workflows/release-assets.yaml`
+#### Go Build `.github/workflows/go-build.yaml`
+
+Builds a Go binary and publishes it as a docker container image, including:
+
+- Lints a Golang repository using [golangci-lint-action](https://github.com/golangci/golangci-lint-action).
+- Tests the Golang repository.
+- Image tag format for different release actions:
+  - `release`: `<release-tag>`
+  - `push`: `branch-<branch-name>`
+  - `pull_request`: `pr-<pull-request-number>-<branch-name>`
+- Embeds an SBOM into the resulting Docker image using Buildx.
+- Signs the resulting container image using [cosign](https://github.com/sigstore/cosign).
+
+We encourage using the `build-command` and then using a Dockerfile that just copies over the build's binaries instead of building the artifacts directly in the Dockerfile. The advantage is that CI caches can be used properly and build times are reduced drastically.
+
+```yaml
+jobs:
+  build:
+    uses: metal-stack/actions-common/.github/workflows/go-build.yaml@main
+    secrets: inherit
+    with:
+      lint: true
+      test: true
+      build: true
+      test-command: go test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
+      registry: ghcr.io
+      registry-username: ${{ github.actor }}
+      image-name: ${{ github.repository }}
+      artifact-files: ""
+```
+
+### Release Assets `.github/workflows/release-assets.yaml`
 
 Publishes files in a Github Release using [action-gh-release](https://github.com/softprops/action-gh-release). Only works on `release` pipeline triggers.
 
@@ -58,42 +87,4 @@ jobs:
     with:
       files: |
         bin/*
-```
-
-### Go
-
-#### Go Lint `.github/workflows/go-lint.yaml`
-
-Lints a Golang repository using [golangci-lint-action](https://github.com/golangci/golangci-lint-action).
-
-```yaml
-jobs:
-  lint:
-    uses: metal-stack/actions-common/.github/workflows/go-lint.yaml@main
-```
-
-#### Go Build `.github/workflows/go-build.yaml`
-
-Builds a Go binary and publishes it as a docker container image, including:
-
-- Image tag format for different release actions
-  - `release`: `<release-tag>`
-  - `push`: `branch-<branch-name>`
-  - `pull_request`: `pr-<pull-request-number>-<branch-name>`
-- Embedding SBOM using Buildx
-- Signing the container image using [cosign](https://github.com/sigstore/cosign)
-
-We encourage using the `build-command` and then using a Dockerfile that just copies over the build's binaries instead of building the artifacts directly in the Dockerfile. The advantage is that CI caches can be used properly and build times are reduced drastically.
-
-```yaml
-jobs:
-  build:
-    uses: metal-stack/actions-common/.github/workflows/go-build.yaml@main
-    secrets: inherit
-    with:
-      build-command: make
-      registry: ghcr.io
-      registry-username: ${{ github.actor }}
-      image-name: ${{ github.repository }}
-      artifact-files: ""
 ```

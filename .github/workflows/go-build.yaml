@@ -4,10 +4,33 @@ name: Go Build
 on:
   workflow_call:
     inputs:
+      lint:
+        description: Runs a job to lint the go project.
+        required: false
+        default: true
+        type: boolean
+      test:
+        description: Runs a job to test the go project.
+        required: false
+        default: true
+        type: boolean
+      build:
+        description: Runs a job to build the go project and publish a Docker container.
+        required: false
+        default: true
+        type: boolean
+
+
       build-command:
         description: The command used to build the Go binaries in case needed before building the container.
         required: false
         type: string
+      test-command:
+        description: The command used to test to Go repository.
+        required: false
+        default: go test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
+        type: string
+
       registry:
         description: The registry to publish the container artifact to.
         default: ghcr.io
@@ -23,6 +46,7 @@ on:
         default: ${{ github.repository }}
         required: false
         type: string
+
       artifact-files:
         description: Allows uploading artifacts in order to re-use them in subsequent jobs. You can pass a file pattern or directory here.
         required: false
@@ -32,9 +56,43 @@ env:
   tag: "" # gets set dynamically during workflow run
 
 jobs:
+  go-lint:
+    name: Run golangci-lint
+    runs-on: ubuntu-latest
+    if: "${{ inputs.lint }}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Lint Go
+        uses: golangci/golangci-lint-action@v9
+
+  go-test:
+    name: Go test
+    runs-on: ubuntu-latest
+    if: "${{ inputs.test }}"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Run tests
+        run: |
+          ${{ inputs.test-command }}
+
   go-build:
     name: Go Build
     runs-on: ubuntu-latest
+    if: "${{ inputs.build }}"
     steps:
       - name: Registry login
         uses: docker/login-action@v4

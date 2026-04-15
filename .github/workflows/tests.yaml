@@ -12,9 +12,6 @@ on:
       - main
 
 jobs:
-  lint:
-    uses: metal-stack/actions-common/.github/workflows/go-lint.yaml@main
-
   build:
     uses: metal-stack/actions-common/.github/workflows/go-build.yaml@main
     secrets: inherit
