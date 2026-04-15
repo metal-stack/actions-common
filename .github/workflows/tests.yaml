@@ -13,7 +13,7 @@ on:
 
 jobs:
   build:
-    uses: metal-stack/actions-common/.github/workflows/go-build.yaml@main
+    uses: ./.github/workflows/go-build.yaml
     secrets: inherit
     with:
       build-command: make go
@@ -21,11 +21,11 @@ jobs:
         bin/*
 
   spell-check:
-    uses: metal-stack/actions-common/.github/workflows/spell-check.yaml@main
+    uses: ./.github/workflows/spell-check.yaml
 
   draft:
-    uses: metal-stack/actions-common/.github/workflows/release-drafter.yaml@main
+    uses: ./.github/workflows/release-drafter.yaml
 
   release-assets:
-    uses: metal-stack/actions-common/.github/workflows/release-assets.yaml@main
+    uses: ./.github/workflows/release-assets.yaml
     needs: build
