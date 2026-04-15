@@ -27,6 +27,16 @@ Usually, we also expect to pass on secrets to the inherited workflow actions usi
 
 ### Generic
 
+#### Spelling `.github/workflows/spell-check.yaml`
+
+Runs spell checking using [typos](https://github.com/crate-ci/typos).
+
+```yaml
+jobs:
+  draft:
+    uses: metal-stack/actions-common/.github/workflows/spell-check.yaml@main
+```
+
 #### Release Drafter `.github/workflows/release-drafter.yaml`
 
 Please note that it does not seem possible with Github to provide a shared `release-drafter.yml` configuration for all repositories. It still makes sense to use the common action in order to manage the action's version from one location.

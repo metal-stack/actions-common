@@ -1,0 +1,12 @@
+---
+name: Spell check
+
+on:
+  workflow_call:
+
+jobs:
+  spelling:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check spelling
+        uses: crate-ci/typos@v1.45.1
