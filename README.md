@@ -33,7 +33,7 @@ Runs spell checking using [typos](https://github.com/crate-ci/typos).
 ```yaml
 jobs:
   spell-check:
-    uses: metal-stack/actions-common/.github/workflows/spell-check.yaml@main
+    uses: metal-stack/actions-common/.github/workflows/spell-check.yaml@v1
 ```
 
 ### Release Drafter `.github/workflows/release-drafter.yaml`
@@ -43,7 +43,7 @@ Please note that it does not seem possible with Github to provide a shared `rele
 ```yaml
 jobs:
   draft:
-    uses: metal-stack/actions-common/.github/workflows/release-drafter.yaml@main
+    uses: metal-stack/actions-common/.github/workflows/release-drafter.yaml@v1
 ```
 
 #### Go Build `.github/workflows/go-build.yaml`
@@ -64,7 +64,7 @@ We encourage using the `build-command` and then using a Dockerfile that just cop
 ```yaml
 jobs:
   build:
-    uses: metal-stack/actions-common/.github/workflows/go-build.yaml@main
+    uses: metal-stack/actions-common/.github/workflows/go-build.yaml@v1
     secrets: inherit
     with:
       lint: true
@@ -84,7 +84,7 @@ Publishes files in a Github Release using [action-gh-release](https://github.com
 ```yaml
 jobs:
   release-assets:
-    uses: metal-stack/actions-common/.github/workflows/release-assets.yaml@main
+    uses: metal-stack/actions-common/.github/workflows/release-assets.yaml@v1
     with:
       files: |
         bin/*
