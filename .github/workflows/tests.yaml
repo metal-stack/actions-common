@@ -19,7 +19,7 @@ jobs:
     uses: metal-stack/actions-common/.github/workflows/go-build.yaml@main
     secrets: inherit
     with:
-      build-command: echo "test" > test.txt
+      build-command: make go
 
   spell-check:
     uses: metal-stack/actions-common/.github/workflows/spell-check.yaml@main

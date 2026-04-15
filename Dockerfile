@@ -1,2 +1,2 @@
 FROM alpine
-COPY test.txt .
+COPY bin/actions-common .
