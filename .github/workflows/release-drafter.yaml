@@ -6,7 +6,9 @@ on:
 
 jobs:
   draft:
+    name: Generate Release Draft
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' && github.ref_name == github.event.repository.default_branch }}
     steps:
     - uses: release-drafter/release-drafter@v7
       with:
