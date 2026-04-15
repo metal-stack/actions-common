@@ -4,8 +4,6 @@ Provides [reusable workflows](https://docs.github.com/en/actions/how-tos/reuse-a
 
 ## Usage
 
-We usually expect the following pipeline triggers:
-
 ```yaml
 ---
 name: metal-stack component release
@@ -19,9 +17,12 @@ on:
   push:
     branches:
       - main
+
+jobs:
+  <see-reusable-workflows-below>
 ```
 
-In addition to that, we also expect to pass on secrets to the inherited workflow actions using `secrets: inherit` for certain workflows.
+For certain workflows, we expect to pass on secrets to the inherited workflow actions using `secrets: inherit`.
 
 ## Reusable Workflows
 
