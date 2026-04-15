@@ -26,3 +26,7 @@ jobs:
 
   draft:
     uses: metal-stack/actions-common/.github/workflows/release-drafter.yaml@main
+
+  release-assets:
+    uses: metal-stack/actions-common/.github/workflows/release-assets.yaml@main
+    needs: build

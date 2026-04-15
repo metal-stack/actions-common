@@ -47,6 +47,19 @@ jobs:
     uses: metal-stack/actions-common/.github/workflows/release-drafter.yaml@main
 ```
 
+#### Release Assets `.github/workflows/release-assets.yaml`
+
+Publishes files in a Github Release using [action-gh-release](https://github.com/softprops/action-gh-release). Only works on `release` pipeline triggers.
+
+```yaml
+jobs:
+  release-assets:
+    uses: metal-stack/actions-common/.github/workflows/release-assets.yaml@main
+    with:
+      files: |
+        bin/*
+```
+
 ### Go
 
 #### Go Lint `.github/workflows/go-lint.yaml`
@@ -70,6 +83,8 @@ Builds a Go binary and publishes it as a docker container image, including:
 - Embedding SBOM using Buildx
 - Signing the container image using [cosign](https://github.com/sigstore/cosign)
 
+We encourage using the `build-command` and then using a Dockerfile that just copies over the build's binaries instead of building the artifacts directly in the Dockerfile. The advantage is that CI caches can be used properly and build times are reduced drastically.
+
 ```yaml
 jobs:
   build:
@@ -80,4 +95,5 @@ jobs:
       registry: ghcr.io
       registry-username: ${{ github.actor }}
       image-name: ${{ github.repository }}
+      artifact-files: ""
 ```

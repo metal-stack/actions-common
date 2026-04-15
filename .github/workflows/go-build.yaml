@@ -9,18 +9,22 @@ on:
         required: false
         type: string
       registry:
-        description: The registry to publish the container artifact to
+        description: The registry to publish the container artifact to.
         default: ghcr.io
         required: false
         type: string
       registry-username:
-        description: The registry username
+        description: The registry username to login with.
         default: ${{ github.actor }}
         required: false
         type: string
       image-name:
-        description: The resulting container image name
+        description: The resulting container image name.
         default: ${{ github.repository }}
+        required: false
+        type: string
+      artifact-files:
+        description: Allows uploading artifacts in order to re-use them in subsequent jobs. You can pass a file pattern or directory here.
         required: false
         type: string
 
@@ -90,3 +94,10 @@ jobs:
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+      - uses: actions/upload-artifact@v7
+        with:
+          path: ${{ inputs.artifact-files }}
+          if-no-files-found: error
+          retention-days: 1
+        if: "${{ inputs.artifact-files }}"

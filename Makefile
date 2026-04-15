@@ -12,3 +12,4 @@ go:
 								   -X 'github.com/metal-stack/v.BuildDate=$(BUILDDATE)'" \
 	   -o bin/actions-common github.com/metal-stack/actions-common
 	strip bin/actions-common
+	sha512sum bin/actions-common > bin/actions-common.sha512
