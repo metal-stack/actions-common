@@ -1,6 +1,6 @@
 # Common Github Actions
 
-Provides common Github Actions used in the metal-stack organization.
+Provides [reusable workflows](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows) for Github Actions used in the metal-stack organization.
 
 ## Usage
 
@@ -21,9 +21,9 @@ on:
       - main
 ```
 
-Usually, we also expect to pass on secrets to the inherited workflow actions using `secrets: inherit`.
+In addition to that, we also expect to pass on secrets to the inherited workflow actions using `secrets: inherit` for certain workflows.
 
-## Workflows
+## Reusable Workflows
 
 ### Spelling `.github/workflows/spell-check.yaml`
 
