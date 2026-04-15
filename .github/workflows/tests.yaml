@@ -29,3 +29,5 @@ jobs:
   release-assets:
     uses: ./.github/workflows/release-assets.yaml
     needs: go-build
+    with:
+      artifact-ids: ${{ needs.go-build.outputs.go-build-artifacts }}

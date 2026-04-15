@@ -4,8 +4,12 @@ name: Release Assets
 on:
   workflow_call:
     inputs:
+      artifact-ids:
+        description: The artifact ids from the upload-artifact job.
+        required: true
+        type: string
       files:
-        description: The files to publish
+        description: A file (pattern) to publish.
         default: |
           bin/*
         required: false
@@ -18,8 +22,11 @@ jobs:
     if: ${{ github.event_name == 'release' }}
     steps:
       - uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ inputs.artifact-ids }}
 
       - name: Upload Release Asset
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         with:
           files: ${{ inputs.files }}
+          fail_on_unmatched_files: true

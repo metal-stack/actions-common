@@ -52,6 +52,11 @@ on:
         required: false
         type: string
 
+    outputs:
+        go-build-artifacts:
+          description: The uploaded build artifacts in case artifact-files were provided.
+          value: ${{ jobs.go-build.outputs.go-build-artifacts }}
+
 env:
   tag: "" # gets set dynamically during workflow run
 
@@ -93,6 +98,8 @@ jobs:
     name: Go Build
     runs-on: ubuntu-latest
     if: "${{ inputs.build }}"
+    outputs:
+      go-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}
     steps:
       - name: Registry login
         uses: docker/login-action@v4
@@ -154,7 +161,9 @@ jobs:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
 
       - uses: actions/upload-artifact@v7
+        id: artifact-upload-step
         with:
+          name: go-build-artifact
           path: ${{ inputs.artifact-files }}
           if-no-files-found: error
           retention-days: 1
