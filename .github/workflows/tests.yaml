@@ -1,0 +1,28 @@
+---
+name: metal-stack component release
+on:
+  pull_request:
+    branches:
+      - main
+  release:
+    types:
+      - published
+  push:
+    branches:
+      - main
+
+jobs:
+  lint:
+    uses: metal-stack/actions-common/.github/workflows/go-lint.yaml@main
+
+  build:
+    uses: metal-stack/actions-common/.github/workflows/go-build.yaml@main
+    secrets: inherit
+    with:
+      build-command: echo "test" > test.txt
+
+  spell-check:
+    uses: metal-stack/actions-common/.github/workflows/spell-check.yaml@main
+
+  draft:
+    uses: metal-stack/actions-common/.github/workflows/release-drafter.yaml@main
