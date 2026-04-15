@@ -12,7 +12,7 @@ on:
       - main
 
 jobs:
-  build:
+  go-build:
     uses: ./.github/workflows/go-build.yaml
     secrets: inherit
     with:
@@ -28,4 +28,4 @@ jobs:
 
   release-assets:
     uses: ./.github/workflows/release-assets.yaml
-    needs: build
+    needs: go-build
