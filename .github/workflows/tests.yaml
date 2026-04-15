@@ -20,6 +20,8 @@ jobs:
     secrets: inherit
     with:
       build-command: make go
+      artifact-files: |
+        bin/*
 
   spell-check:
     uses: metal-stack/actions-common/.github/workflows/spell-check.yaml@main

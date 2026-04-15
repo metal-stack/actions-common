@@ -100,4 +100,4 @@ jobs:
           path: ${{ inputs.artifact-files }}
           if-no-files-found: error
           retention-days: 1
-        if: "${{ inputs.artifact-files }}"
+        if: "${{ inputs.artifact-files != '' }}"
