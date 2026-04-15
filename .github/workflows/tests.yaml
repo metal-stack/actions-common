@@ -18,7 +18,7 @@ jobs:
     with:
       build-command: make go
       artifact-files: |
-        bin/*
+        bin/
 
   spell-check:
     uses: ./.github/workflows/spell-check.yaml
