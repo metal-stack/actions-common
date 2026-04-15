@@ -5,7 +5,7 @@ on:
   workflow_call:
 
 jobs:
-  spelling:
+  spell-check:
     runs-on: ubuntu-latest
     steps:
       - name: Check spelling

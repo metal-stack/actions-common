@@ -33,7 +33,7 @@ Runs spell checking using [typos](https://github.com/crate-ci/typos).
 
 ```yaml
 jobs:
-  draft:
+  spell-check:
     uses: metal-stack/actions-common/.github/workflows/spell-check.yaml@main
 ```
 
