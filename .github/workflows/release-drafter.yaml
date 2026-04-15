@@ -7,6 +7,7 @@ on:
 jobs:
   draft:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
     steps:
     - uses: release-drafter/release-drafter@v7
       with:
