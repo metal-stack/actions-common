@@ -71,7 +71,7 @@ jobs:
         helm lint ${{ inputs.chart-path }}
 
   oci-release:
-    name: Publish OCI Helm Chart
+    name: Helm OCI Publish
     runs-on: ubuntu-latest
     if: "${{ inputs.oci-release }}"
     steps:
@@ -107,3 +107,15 @@ jobs:
             registry: ${{ inputs.registry }}
             registry_username: ${{ inputs.registry-username }}
             registry_password: ${{ secrets.GITHUB_TOKEN }}
+
+        - name: Install Cosign
+          uses: sigstore/cosign-installer@v4.1.1
+
+        - name: Sign image
+          run: |
+            cosign sign --yes --key env://COSIGN_PRIVATE_KEY \
+              ${{ inputs.registry }}/${{ inputs.chart-repository }}/${{ inputs.chart-name }}:${{ env.tag }}
+            # TODO: sign the digest, see https://github.com/appany/helm-oci-chart-releaser/issues/28
+          env:
+            COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+            COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
