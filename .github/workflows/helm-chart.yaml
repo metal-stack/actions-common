@@ -52,7 +52,6 @@ env:
   tag: "" # gets set dynamically during workflow run
   container_tag: "" # gets set dynamically during workflow run
 
-
 jobs:
   lint:
     name: Helm Lint
