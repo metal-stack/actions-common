@@ -67,7 +67,7 @@ We encourage using the `build-command` and then using a Dockerfile that just cop
 
 ```yaml
 jobs:
-  build:
+  go-build:
     uses: metal-stack/actions-common/.github/workflows/go-build.yaml@v1
     secrets: inherit
     with:
