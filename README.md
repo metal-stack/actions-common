@@ -98,7 +98,7 @@ Helm is more strict about semver in tag names. So, the tags look a bit different
 
 - `release`: `<release-tag>`
 - `push`: `v0.0.0-<branch-name>`
-- `pull_request`: `v0.0.0-pull-request.<pull-request-number>`
+- `pull_request`: `v0.0.0-pr.<pull-request-number>`
 
 ```yaml
 jobs:

@@ -21,7 +21,7 @@ on:
         required: false
         type: string
       registry-username:
-        description: The registry username to login with.
+        description: The registry username to log in with.
         default: ${{ github.actor }}
         required: false
         type: string
@@ -80,7 +80,7 @@ jobs:
 
         - name: Make tag
           run: |
-            [ "${GITHUB_EVENT_NAME}" == 'pull_request' ] && echo "tag=v0.0.0-pull-request.${{ github.event.number }}" >> $GITHUB_ENV || true
+            [ "${GITHUB_EVENT_NAME}" == 'pull_request' ] && echo "tag=v0.0.0-pr.${{ github.event.number }}" >> $GITHUB_ENV || true
             [ "${GITHUB_EVENT_NAME}" == 'release' ] && echo "tag=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
             [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "tag=v0.0.0-${GITHUB_REF##*/}" >> $GITHUB_ENV || true
 
