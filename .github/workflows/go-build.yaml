@@ -15,11 +15,15 @@ on:
         default: true
         type: boolean
       build:
-        description: Runs a job to build the go project and publish a Docker container.
+        description: Runs a job to build the go project.
         required: false
         default: true
         type: boolean
-
+      push:
+        description: Part of the build job to publish a Docker container.
+        required: false
+        default: true
+        type: boolean
 
       build-command:
         description: The command used to build the Go binaries in case needed before building the container.
@@ -64,7 +68,7 @@ jobs:
   go-lint:
     name: Go Lint
     runs-on: ubuntu-latest
-    if: "${{ inputs.lint }}"
+    if: inputs.lint
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -80,7 +84,7 @@ jobs:
   go-test:
     name: Go Test
     runs-on: ubuntu-latest
-    if: "${{ inputs.test }}"
+    if: inputs.test
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -97,7 +101,7 @@ jobs:
   go-build:
     name: Go Build
     runs-on: ubuntu-latest
-    if: "${{ inputs.build }}"
+    if: inputs.build
     outputs:
       go-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}
     steps:
@@ -125,10 +129,11 @@ jobs:
       - name: Build
         run: |
           ${{ inputs.build-command }}
-        if: "${{ inputs.build-command != '' }}"
+        if: inputs.build-command != ''
 
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v4
+        if: inputs.push
 
       - name: Build and push
         uses: docker/build-push-action@v7
@@ -138,6 +143,7 @@ jobs:
           push: true
           sbom: true
           tags: ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }}
+        if: inputs.push
 
       - name: Build and push latest
         uses: docker/build-push-action@v7
@@ -146,10 +152,11 @@ jobs:
           push: true
           sbom: true
           tags: ${{ inputs.registry }}/${{ inputs.image-name }}:latest
-        if: github.event_name == 'release'
+        if: inputs.push && github.event_name == 'release'
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.1.1
+        if: inputs.push
 
       - name: Sign image
         run: |
@@ -159,6 +166,7 @@ jobs:
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        if: inputs.push
 
       - uses: actions/upload-artifact@v7
         id: artifact-upload-step
@@ -167,4 +175,4 @@ jobs:
           path: ${{ inputs.artifact-files }}
           if-no-files-found: error
           retention-days: 1
-        if: "${{ inputs.artifact-files != '' }}"
+        if: inputs.artifact-files != ''
