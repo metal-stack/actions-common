@@ -46,7 +46,7 @@ jobs:
     uses: metal-stack/actions-common/.github/workflows/release-drafter.yaml@v1
 ```
 
-#### Go Build `.github/workflows/go-build.yaml`
+### Go Build `.github/workflows/go-build.yaml`
 
 Builds a Go binary and publishes it as a docker container image, including:
 
@@ -79,7 +79,7 @@ jobs:
 
 ### Release Assets `.github/workflows/release-assets.yaml`
 
-Publishes files in a Github Release using [action-gh-release](https://github.com/softprops/action-gh-release). Only works on `release` pipeline triggers.
+Publishes files in a Github Release using [action-gh-release](https://github.com/softprops/action-gh-release). Only reacts on `release` pipeline triggers.
 
 ```yaml
 jobs:
@@ -88,4 +88,23 @@ jobs:
     with:
       files: |
         bin/*
+```
+
+### Helm Chart `.github/workflows/helm-chart.yaml`
+
+Publishes a helm chart as an OCI artifact and lints it.
+
+Helm is more strict about semver in tag names. So, the tags look a bit different from how the docker tags look like:
+
+- `release`: `<release-tag>`
+- `push`: `v0.0.0-<branch-name>`
+- `pull_request`: `v0.0.0-pull-request.<pull-request-number>`
+
+```yaml
+jobs:
+  release-assets:
+    uses: metal-stack/actions-common/.github/workflows/helm-chart.yaml@v1
+    with:
+      lint: true
+      oci-release: true
 ```
