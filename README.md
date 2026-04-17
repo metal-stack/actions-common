@@ -46,6 +46,10 @@ jobs:
     uses: metal-stack/actions-common/.github/workflows/release-drafter.yaml@v1
 ```
 
+Note that you can use this action with all pipeline triggers. There is a skip-condition that ensures it only acts on push events on the default branch.
+
+You do not need to provide a `release-drafter.yml` explicitly. A default is used from [.github](https://github.com/metal-stack/.github/blob/main/.github/release-drafter.yml).
+
 #### Go Build `.github/workflows/go-build.yaml`
 
 Builds a Go binary and publishes it as a docker container image, including:
@@ -63,7 +67,7 @@ We encourage using the `build-command` and then using a Dockerfile that just cop
 
 ```yaml
 jobs:
-  build:
+  go-build:
     uses: metal-stack/actions-common/.github/workflows/go-build.yaml@v1
     secrets: inherit
     with:
