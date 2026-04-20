@@ -28,7 +28,7 @@ jobs:
         with:
           name: ${{ inputs.artifact-name || '' }}
           artifact-ids: ${{ inputs.artifact-ids || '' }}
-
+          merge-multiple: true
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v3
