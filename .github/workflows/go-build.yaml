@@ -64,7 +64,7 @@ jobs:
   go-lint:
     name: Go Lint
     runs-on: ubuntu-latest
-    if: "${{ inputs.lint }}"
+    if: inputs.lint
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -97,7 +97,7 @@ jobs:
   go-build:
     name: Go Build
     runs-on: ubuntu-latest
-    if: "${{ inputs.build }}"
+    if: inputs.build
     outputs:
       go-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}
     steps:
@@ -125,7 +125,7 @@ jobs:
       - name: Build
         run: |
           ${{ inputs.build-command }}
-        if: "${{ inputs.build-command != '' }}"
+        if: inputs.build-command != ''
 
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v4
@@ -167,4 +167,4 @@ jobs:
           path: ${{ inputs.artifact-files }}
           if-no-files-found: error
           retention-days: 1
-        if: "${{ inputs.artifact-files != '' }}"
+        if: inputs.artifact-files != ''

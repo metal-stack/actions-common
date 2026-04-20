@@ -56,7 +56,7 @@ jobs:
   lint:
     name: Helm Lint
     runs-on: ubuntu-latest
-    if: "${{ inputs.lint }}"
+    if: inputs.lint
     steps:
     - name: Checkout
       uses: actions/checkout@v6
@@ -73,7 +73,7 @@ jobs:
   oci-release:
     name: Helm OCI Publish
     runs-on: ubuntu-latest
-    if: "${{ inputs.oci-release }}"
+    if: inputs.oci-release
     steps:
         - name: Checkout
           uses: actions/checkout@v6
@@ -95,7 +95,7 @@ jobs:
           uses: mikefarah/yq@v4
           with:
             cmd: yq e -i '.${{ inputs.container-image-values-patch }}="${{ env.container_tag }}"' ${{ inputs.chart-path }}/values.yaml
-          if: "${{ inputs.container-image-values-patch != '' }}"
+          if: inputs.container-image-values-patch != ''
 
         - name: Release Helm OCI Artifact
           uses: appany/helm-oci-chart-releaser@v0.5.0
