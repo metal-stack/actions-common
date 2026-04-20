@@ -31,3 +31,10 @@ jobs:
     needs: go-build
     with:
       artifact-ids: ${{ needs.go-build.outputs.go-build-artifacts }}
+
+  helm-chart:
+    uses: ./.github/workflows/helm-chart.yaml
+    secrets: inherit
+    with:
+      chart-path: test-chart
+      container-image-values-patch: a.b.image
