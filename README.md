@@ -74,6 +74,7 @@ jobs:
       lint: true
       test: true
       build: true
+      push: true
       test-command: go test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
       registry: ghcr.io
       registry-username: ${{ github.actor }}

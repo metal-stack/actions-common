@@ -6,7 +6,11 @@ on:
     inputs:
       artifact-ids:
         description: The artifact ids from the upload-artifact job.
-        required: true
+        required: false
+        type: string
+      artifact-name:
+        description: The artifact name from the upload-artifact job.
+        required: false
         type: string
       files:
         description: A file (pattern) to publish.
@@ -22,7 +26,9 @@ jobs:
     steps:
       - uses: actions/download-artifact@v8
         with:
-          artifact-ids: ${{ inputs.artifact-ids }}
+          name: ${{ inputs.artifact-name || '' }}
+          artifact-ids: ${{ inputs.artifact-ids || '' }}
+          merge-multiple: true
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v3
