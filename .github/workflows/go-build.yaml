@@ -74,6 +74,11 @@ jobs:
         with:
           go-version-file: 'go.mod'
 
+      - name: Ensure code is fmted
+        run: |
+          go fmt ./...
+          git diff --exit-code --compact-summary
+
       - name: Lint Go
         uses: golangci/golangci-lint-action@v9
 
