@@ -38,3 +38,17 @@ jobs:
     with:
       chart-path: test-chart
       container-image-values-patch: a.b.image
+
+  oci-ansible-role:
+    uses: ./.github/workflows/oci-release-vector-artifact.yaml
+    secrets: inherit
+    with:
+      artifact-type: ansible-role
+      image-name: ${{ github.repository }}-ansible-role
+
+  oci-release-vector:
+    uses: ./.github/workflows/oci-release-vector-artifact.yaml
+    secrets: inherit
+    with:
+      artifact-type: release-vector
+      image-name: ${{ github.repository }}-release-vector
