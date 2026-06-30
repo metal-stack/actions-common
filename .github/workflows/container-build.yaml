@@ -4,25 +4,9 @@ name: Container Build
 on:
   workflow_call:
     inputs:
-      test:
-        description: Runs a job to test the project.
-        required: false
-        default: false
-        type: boolean
-      build:
-        description: Runs a job to build and publish a Docker container.
-        required: false
-        default: true
-        type: boolean
-
       build-command:
-        description: The command used to build the Go binaries in case needed before building the container.
+        description: The command used to build the project in case needed before building the container.
         required: false
-        type: string
-      test-command:
-        description: The command used to test the repository.
-        required: false
-        default: make test
         type: string
 
       registry:
@@ -65,22 +49,9 @@ env:
   tag: "" # gets set dynamically during workflow run
 
 jobs:
-  container-test:
-    name: Test
-    runs-on: ubuntu-latest
-    if: "${{ inputs.test }}"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Run tests
-        run: |
-          ${{ inputs.test-command }}
-
   container-build:
     name: Container Build
     runs-on: ubuntu-latest
-    if: inputs.build
     outputs:
       container-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}
     steps:
@@ -92,7 +63,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Make tag
         run: |
@@ -129,7 +100,7 @@ jobs:
         if: github.event_name == 'release'
 
       - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.1.1
+        uses: sigstore/cosign-installer@v4.1.2
 
       - name: Sign image
         run: |

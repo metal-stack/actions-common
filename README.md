@@ -87,7 +87,6 @@ jobs:
 
 Builds a container and publishes it as a docker container image, including:
 
-- Tests for the repository.
 - Image tag format for different release actions:
   - `release`: `<release-tag>`
   - `push`: `branch-<branch-name>`
@@ -101,9 +100,6 @@ jobs:
     uses: metal-stack/actions-common/.github/workflows/container-build.yaml@v1
     secrets: inherit
     with:
-      test: true
-      build: true
-      test-command: make test
       registry: ghcr.io
       registry-username: ${{ github.actor }}
       image-name: ${{ github.repository }}

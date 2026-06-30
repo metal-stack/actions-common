@@ -24,8 +24,6 @@ jobs:
     uses: ./.github/workflows/container-build.yaml
     secrets: inherit
     with:
-      test: true
-      test-command: echo "success"
       dockerfile: Dockerfile2
       build-command: |
         mkdir bin
