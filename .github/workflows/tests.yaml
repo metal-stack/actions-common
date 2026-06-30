@@ -26,9 +26,10 @@ jobs:
     with:
       test: true
       test-command: echo "success"
+      dockerfile: Dockerfile2
       build-command: |
         mkdir bin
-        echo "an artifact" > bin/actions-common
+        echo "an artifact" > bin/an-artifact
       artifact-files: |
         bin/
 

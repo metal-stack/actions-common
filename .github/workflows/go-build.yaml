@@ -46,6 +46,16 @@ on:
         default: ${{ github.repository }}
         required: false
         type: string
+      dockerfile:
+        description: The dockerfile used for building the container.
+        default: "./Dockerfile"
+        required: false
+        type: string
+      context:
+        description: The build context used for building the container.
+        default: .
+        required: false
+        type: string
 
       artifact-files:
         description: Allows uploading artifacts in order to re-use them in subsequent jobs. You can pass a file pattern or directory here.
@@ -139,7 +149,8 @@ jobs:
         uses: docker/build-push-action@v7
         id: build
         with:
-          context: .
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
           push: true
           sbom: true
           tags: ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }}
@@ -147,7 +158,8 @@ jobs:
       - name: Build and push latest
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
           push: true
           sbom: true
           tags: ${{ inputs.registry }}/${{ inputs.image-name }}:latest

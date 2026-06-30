@@ -40,6 +40,16 @@ on:
         default: ${{ github.repository }}
         required: false
         type: string
+      dockerfile:
+        description: The dockerfile used for building the container.
+        default: "./Dockerfile"
+        required: false
+        type: string
+      context:
+        description: The build context used for building the container.
+        default: .
+        required: false
+        type: string
 
       artifact-files:
         description: Allows uploading artifacts in order to re-use them in subsequent jobs. You can pass a file pattern or directory here.
@@ -102,18 +112,20 @@ jobs:
         uses: docker/build-push-action@v7
         id: build
         with:
-          context: .
+          context: ${{ inputs.context }}
           push: true
           sbom: true
           tags: ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }}
+          file: ${{ inputs.dockerfile }}
 
       - name: Build and push latest
         uses: docker/build-push-action@v7
         with:
-          context: .
+          context: ${{ inputs.context }}
           push: true
           sbom: true
           tags: ${{ inputs.registry }}/${{ inputs.image-name }}:latest
+          file: ${{ inputs.dockerfile }}
         if: github.event_name == 'release'
 
       - name: Install Cosign
@@ -131,7 +143,7 @@ jobs:
       - uses: actions/upload-artifact@v7
         id: artifact-upload-step
         with:
-          name: go-build-artifact
+          name: container-build-artifact
           path: ${{ inputs.artifact-files }}
           if-no-files-found: error
           retention-days: 1

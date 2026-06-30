@@ -78,6 +78,8 @@ jobs:
       registry: ghcr.io
       registry-username: ${{ github.actor }}
       image-name: ${{ github.repository }}
+      context: .
+      dockerfile: Dockerfile
       artifact-files: ""
 ```
 
@@ -105,6 +107,8 @@ jobs:
       registry: ghcr.io
       registry-username: ${{ github.actor }}
       image-name: ${{ github.repository }}
+      context: .
+      dockerfile: Dockerfile
       artifact-files: ""
 ```
 
