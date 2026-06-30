@@ -20,6 +20,16 @@ jobs:
       artifact-files: |
         bin/
 
+  container-build:
+    uses: ./.github/workflows/container-build.yaml
+    secrets: inherit
+    with:
+      test: true
+      test-command: echo "success"
+      build-command: |
+        mkdir bin
+        echo "an artifact" > bin/actions-common
+
   spell-check:
     uses: ./.github/workflows/spell-check.yaml
 
