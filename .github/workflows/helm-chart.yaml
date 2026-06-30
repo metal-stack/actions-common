@@ -59,7 +59,7 @@ jobs:
     if: inputs.lint
     steps:
     - name: Checkout
-      uses: actions/checkout@v6
+      uses: actions/checkout@v7
 
     - name: Set up Helm
       uses: azure/setup-helm@v5
@@ -76,7 +76,7 @@ jobs:
     if: inputs.oci-release
     steps:
         - name: Checkout
-          uses: actions/checkout@v6
+          uses: actions/checkout@v7
 
         - name: Make tag
           run: |
@@ -109,7 +109,7 @@ jobs:
             registry_password: ${{ secrets.GITHUB_TOKEN }}
 
         - name: Install Cosign
-          uses: sigstore/cosign-installer@v4.1.1
+          uses: sigstore/cosign-installer@v4.1.2
 
         - name: Registry login
           uses: docker/login-action@v4
