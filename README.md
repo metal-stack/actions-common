@@ -139,3 +139,18 @@ jobs:
       lint: true
       oci-release: true
 ```
+
+### OCI Release Vector Artifact `.github/workflows/oci-release-vector-artifact.yaml`
+
+Publishes an OCI release vector artifact as specified in [OCI Artifacts | metal-stack.io](https://metal-stack.io/community/oci-artifacts).
+
+OCI tag format for different release actions:
+  - `release`: `<release-tag>`
+  - `push`: `branch-<branch-name>`
+  - `pull_request`: `pr-<pull-request-number>-<branch-name>`
+
+```yaml
+jobs:
+  release-assets:
+    uses: metal-stack/actions-common/.github/workflows/oci-release-vector-artifact.yaml@v1
+```

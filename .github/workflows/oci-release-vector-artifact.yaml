@@ -1,0 +1,103 @@
+---
+name: OCI Release Vector artifact
+
+on:
+  workflow_call:
+    inputs:
+      artifact-type:
+        description: The release vector artifact type, can be either ansible-role or release-vector. See https://metal-stack.io/community/oci-artifacts for documentation.
+        required: true
+        type: string
+
+      registry:
+        description: The registry to publish the container artifact to.
+        default: ghcr.io
+        required: false
+        type: string
+      registry-username:
+        description: The registry username to log in with.
+        default: ${{ github.actor }}
+        required: false
+        type: string
+      image-name:
+        description: The resulting container image name.
+        default: ${{ github.repository }}
+        required: false
+        type: string
+
+env:
+  tag: "" # gets set dynamically during workflow run
+
+jobs:
+  oci-release-vector-artifact:
+    name: OCI Release Vector Artifact
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Registry login
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry-username }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Make tag
+        run: |
+          [ "${GITHUB_EVENT_NAME}" == 'pull_request' ] && echo "tag=pr-$(echo $GITHUB_REF | awk -F / '{print $3}')-${GITHUB_HEAD_REF##*/}" >> $GITHUB_ENV || true
+          [ "${GITHUB_EVENT_NAME}" == 'release' ] && echo "tag=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
+          [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "tag=branch-${GITHUB_REF##*/}" >> $GITHUB_ENV || true
+
+      - name: Install Oras
+        uses: oras-project/setup-oras@v2
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Fail if artifact type not in [ansible-role, release-vector]
+        run: |
+          echo "either ansible-role or release-vector artifact must be specified as artifact type"
+          exit 1
+        if: inputs.artifact-type != 'ansible-role' && inputs.artifact-type != 'release-vector'
+
+      - name: Publish and sign ansible-role
+        if: inputs.artifact-type == 'ansible-role'
+        run: |
+          rm -rf .git
+          rm -rf .github
+          cwd=${PWD##*/}
+
+          cd ..
+          tar -cpvzf ansible-role.tar.gz ${cwd}
+
+          echo "pusing to ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }}"
+
+          digest=$(oras push ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} \
+              --artifact-type application/vnd.metal-stack.release-vector.v1 \
+              ansible-role.tar.gz:application/vnd.metal-stack.ansible-role.v1.tar+gzip \
+              --format go-template \
+              --template "{{ .digest }}")
+
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} ${{ inputs.registry }}/${{ inputs.image-name }}@${digest}
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+      - name: Publish and sign release-vector
+        if: inputs.artifact-type == 'release-vector'
+        run: |
+          tar -czvf release.tar.gz release.yaml
+
+          echo "pusing to ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }}"
+
+          digest=$(oras push ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} \
+              --artifact-type application/vnd.metal-stack.release-vector.v1 \
+              release.tar.gz:application/vnd.metal-stack.release-vector.v1.tar+gzip \
+              --format go-template \
+              --template "{{ .digest }}")
+
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} ${{ inputs.registry }}/${{ inputs.image-name }}@${digest}
+        env:
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
