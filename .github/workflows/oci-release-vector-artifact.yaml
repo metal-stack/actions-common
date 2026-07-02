@@ -65,6 +65,7 @@ jobs:
         if: inputs.artifact-type == 'ansible-role'
         run: |
           rm -rf .git
+          rm -rf .github
           cwd=${PWD##*/}
 
           cd ..
