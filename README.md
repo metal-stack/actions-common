@@ -115,7 +115,7 @@ jobs:
 
 ### OCI Release Vector Artifact `.github/workflows/oci-release-vector-artifact.yaml`
 
-Publishes an OCI release vector artifact as specified in https://metal-stack.io/community/oci-artifacts.
+Publishes an OCI release vector artifact as specified in [OCI Artifacts | metal-stack.io](https://metal-stack.io/community/oci-artifacts).
 
 OCI tag format for different release actions:
   - `release`: `<release-tag>`
