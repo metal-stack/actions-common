@@ -20,6 +20,17 @@ jobs:
       artifact-files: |
         bin/
 
+  container-build:
+    uses: ./.github/workflows/container-build.yaml
+    secrets: inherit
+    with:
+      dockerfile: Dockerfile2
+      build-command: |
+        mkdir bin
+        echo "an artifact" > bin/an-artifact
+      artifact-files: |
+        bin/
+
   spell-check:
     uses: ./.github/workflows/spell-check.yaml
 
@@ -28,9 +39,11 @@ jobs:
 
   release-assets:
     uses: ./.github/workflows/release-assets.yaml
-    needs: go-build
+    needs:
+      - go-build
+      - container-build
     with:
-      artifact-ids: ${{ needs.go-build.outputs.go-build-artifacts }}
+      artifact-ids: ${{ needs.go-build.outputs.go-build-artifacts }},${{ needs.container-build.outputs.container-build-artifacts }}
 
   helm-chart:
     uses: ./.github/workflows/helm-chart.yaml

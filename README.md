@@ -78,6 +78,33 @@ jobs:
       registry: ghcr.io
       registry-username: ${{ github.actor }}
       image-name: ${{ github.repository }}
+      context: .
+      dockerfile: Dockerfile
+      artifact-files: ""
+```
+
+### Container Build `.github/workflows/container-build.yaml`
+
+Builds a container and publishes it as a docker container image, including:
+
+- Image tag format for different release actions:
+  - `release`: `<release-tag>`
+  - `push`: `branch-<branch-name>`
+  - `pull_request`: `pr-<pull-request-number>-<branch-name>`
+- Embeds an SBOM into the resulting Docker image using Buildx.
+- Signs the resulting container image using [cosign](https://github.com/sigstore/cosign).
+
+```yaml
+jobs:
+  go-build:
+    uses: metal-stack/actions-common/.github/workflows/container-build.yaml@v1
+    secrets: inherit
+    with:
+      registry: ghcr.io
+      registry-username: ${{ github.actor }}
+      image-name: ${{ github.repository }}
+      context: .
+      dockerfile: Dockerfile
       artifact-files: ""
 ```
 
