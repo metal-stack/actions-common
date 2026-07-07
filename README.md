@@ -153,4 +153,9 @@ OCI tag format for different release actions:
 jobs:
   release-assets:
     uses: metal-stack/actions-common/.github/workflows/oci-release-vector-artifact.yaml@v1
+    with:
+      registry: ghcr.io
+      registry-username: ${{ github.actor }}
+      image-name: ${{ github.repository }}
+      omit-branch-name-on-tag-push: false
 ```
