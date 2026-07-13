@@ -89,7 +89,7 @@ Builds a container and publishes it as a docker container image, including:
 
 - Image tag format for different release actions:
   - `release`: `<release-tag>`
-  - `push`: `branch-<branch-name>`
+  - `push`: `branch-<branch-name>` (on branch push), `<tag-name>` (on tag push)
   - `pull_request`: `pr-<pull-request-number>-<branch-name>`
 - Embeds an SBOM into the resulting Docker image using Buildx.
 - Signs the resulting container image using [cosign](https://github.com/sigstore/cosign).
@@ -128,7 +128,7 @@ Publishes a helm chart as an OCI artifact and lints it.
 Helm is more strict about semver in tag names. So, the tags look a bit different from how the docker tags look like:
 
 - `release`: `<release-tag>`
-- `push`: `v0.0.0-<branch-name>`
+- `push`: `v0.0.0-<branch-name>` (on branch push), `<tag-name>` (on tag push)
 - `pull_request`: `v0.0.0-pr.<pull-request-number>`
 
 ```yaml
@@ -146,7 +146,7 @@ Publishes an OCI release vector artifact as specified in [OCI Artifacts | metal-
 
 OCI tag format for different release actions:
   - `release`: `<release-tag>`
-  - `push`: `branch-<branch-name>`
+  - `push`: `branch-<branch-name>` (on branch push), `<tag-name>` (on tag push)
   - `pull_request`: `pr-<pull-request-number>-<branch-name>`
 
 ```yaml
@@ -157,5 +157,4 @@ jobs:
       registry: ghcr.io
       registry-username: ${{ github.actor }}
       image-name: ${{ github.repository }}
-      omit-branch-name-on-tag-push: false
 ```

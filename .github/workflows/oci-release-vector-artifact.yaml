@@ -24,11 +24,6 @@ on:
         default: ${{ github.repository }}
         required: false
         type: string
-      omit-branch-name-on-tag-push:
-        description: When the trigger event is of type push and the ref type is 'tag', then use the tag name for the resulting artifact tag instead of branch-<tag ref>.
-        default: false
-        required: false
-        type: boolean
 
 env:
   tag: "" # gets set dynamically during workflow run
@@ -52,12 +47,8 @@ jobs:
         run: |
           [ "${GITHUB_EVENT_NAME}" == 'pull_request' ] && echo "tag=pr-$(echo $GITHUB_REF | awk -F / '{print $3}')-${GITHUB_HEAD_REF##*/}" >> $GITHUB_ENV || true
           [ "${GITHUB_EVENT_NAME}" == 'release' ] && echo "tag=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
-          [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "tag=branch-${GITHUB_REF##*/}" >> $GITHUB_ENV || true
-
-      - name: Overwrite tag if necessary
-        run: |
-          [ "${GITHUB_EVENT_NAME}" == 'push' ] && echo "tag=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
-        if: inputs.omit-branch-name-on-tag-push && github.ref_type == 'tag'
+          [ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'branch' ] && echo "tag=branch-${GITHUB_REF##*/}" >> $GITHUB_ENV || true
+          [ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'tag' ] && echo "tag=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
 
       - name: Install Oras
         uses: oras-project/setup-oras@v2
