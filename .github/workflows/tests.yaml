@@ -44,6 +44,9 @@ jobs:
       - container-build
     with:
       artifact-ids: ${{ needs.go-build.outputs.go-build-artifacts }},${{ needs.container-build.outputs.container-build-artifacts }}
+      files: |
+        ./container-build-artifact/*
+        ./go-build-artifact/*
 
   helm-chart:
     uses: ./.github/workflows/helm-chart.yaml
