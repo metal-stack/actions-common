@@ -62,6 +62,14 @@ on:
         required: false
         type: string
 
+    secrets:
+      COSIGN_PRIVATE_KEY:
+        required: true
+      COSIGN_PASSWORD:
+        required: true
+      GITHUB_TOKEN:
+        required: true
+
     outputs:
         go-build-artifacts:
           description: The uploaded build artifacts in case artifact-files were provided.
