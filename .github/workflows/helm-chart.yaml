@@ -48,6 +48,12 @@ on:
         required: true
         type: string
 
+    secrets:
+      COSIGN_PRIVATE_KEY:
+        required: true
+      COSIGN_PASSWORD:
+        required: true
+
 env:
   tag: "" # gets set dynamically during workflow run
   container_tag: "" # gets set dynamically during workflow run

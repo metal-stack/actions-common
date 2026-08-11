@@ -45,6 +45,12 @@ on:
           description: The uploaded build artifacts in case artifact-files were provided.
           value: ${{ jobs.container-build.outputs.container-build-artifacts }}
 
+    secrets:
+      COSIGN_PRIVATE_KEY:
+        required: true
+      COSIGN_PASSWORD:
+        required: true
+
 env:
   tag: "" # gets set dynamically during workflow run
 

@@ -25,6 +25,12 @@ on:
         required: false
         type: string
 
+    secrets:
+      COSIGN_PRIVATE_KEY:
+        required: true
+      COSIGN_PASSWORD:
+        required: true
+
 env:
   tag: "" # gets set dynamically during workflow run
 
