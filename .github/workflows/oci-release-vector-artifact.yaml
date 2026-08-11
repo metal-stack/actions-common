@@ -19,6 +19,12 @@ on:
         default: ${{ github.actor }}
         required: false
         type: string
+      registry-password:
+        description: The registry password to login with. Falls back to the GITHUB_TOKEN CI secret.
+        default: ""
+        required: false
+        type: string
+
       image-name:
         description: The resulting container image name.
         default: ${{ github.repository }}
@@ -47,7 +53,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.registry-username }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ inputs.registry-password != '' && inputs.registry-password || secrets.GITHUB_TOKEN }}
 
       - name: Make tag
         run: |
