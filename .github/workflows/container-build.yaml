@@ -47,9 +47,9 @@ on:
           value: ${{ jobs.container-build.outputs.container-build-artifacts }}
 
     secrets:
-      cosign-private-key:
+      COSIGN_PRIVATE_KEY:
         required: true
-      cosign-password:
+      COSIGN_PASSWORD:
         required: true
       registry-password:
         description: The registry password to login with. Falls back to the GITHUB_TOKEN CI secret.
@@ -118,8 +118,8 @@ jobs:
             ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} \
             ${{ inputs.registry }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}
         env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
-          COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
 
       - uses: actions/upload-artifact@v7
         id: artifact-upload-step

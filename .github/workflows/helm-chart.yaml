@@ -49,9 +49,9 @@ on:
         type: string
 
     secrets:
-      cosign-private-key:
+      COSIGN_PRIVATE_KEY:
         required: true
-      cosign-password:
+      COSIGN_PASSWORD:
         required: true
       registry-password:
         description: The registry password to login with. Falls back to the GITHUB_TOKEN CI secret.
@@ -135,5 +135,5 @@ jobs:
               ${{ inputs.registry }}/${{ inputs.chart-repository }}/${{ inputs.chart-name }}:${{ env.tag }}
             # TODO: sign the digest, see https://github.com/appany/helm-oci-chart-releaser/issues/28
           env:
-            COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
-            COSIGN_PASSWORD: ${{ secrets.cosign-password }}
+            COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
+            COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
