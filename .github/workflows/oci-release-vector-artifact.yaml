@@ -19,6 +19,7 @@ on:
         default: ${{ github.actor }}
         required: false
         type: string
+
       image-name:
         description: The resulting container image name.
         default: ${{ github.repository }}
@@ -30,6 +31,9 @@ on:
         required: true
       COSIGN_PASSWORD:
         required: true
+      DOCKER_REGISTRY_PASSWORD:
+        description: The registry password to login with. Falls back to the GITHUB_TOKEN CI secret.
+        required: false
 
 env:
   tag: "" # gets set dynamically during workflow run
@@ -47,7 +51,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.registry-username }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD != '' && secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
 
       - name: Make tag
         run: |

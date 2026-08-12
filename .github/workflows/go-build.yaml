@@ -20,7 +20,6 @@ on:
         default: true
         type: boolean
 
-
       build-command:
         description: The command used to build the Go binaries in case needed before building the container.
         required: false
@@ -41,6 +40,7 @@ on:
         default: ${{ github.actor }}
         required: false
         type: string
+
       image-name:
         description: The resulting container image name.
         default: ${{ github.repository }}
@@ -67,6 +67,9 @@ on:
         required: true
       COSIGN_PASSWORD:
         required: true
+      DOCKER_REGISTRY_PASSWORD:
+        description: The registry password to login with. Falls back to the GITHUB_TOKEN CI secret.
+        required: false
 
     outputs:
         go-build-artifacts:
@@ -127,7 +130,7 @@ jobs:
         with:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.registry-username }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD != '' && secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
 
       - name: Checkout
         uses: actions/checkout@v7
