@@ -27,9 +27,9 @@ on:
         type: string
 
     secrets:
-      COSIGN_PRIVATE_KEY:
+      cosign-private-key:
         required: true
-      COSIGN_PASSWORD:
+      cosign-password:
         required: true
 
       registry-password:
@@ -93,8 +93,8 @@ jobs:
 
           cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} ${{ inputs.registry }}/${{ inputs.image-name }}@${digest}
         env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+          COSIGN_PASSWORD: ${{ secrets.cosign-password }}
 
       - name: Publish and sign release-vector
         if: inputs.artifact-type == 'release-vector'
@@ -111,5 +111,5 @@ jobs:
 
           cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} ${{ inputs.registry }}/${{ inputs.image-name }}@${digest}
         env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          COSIGN_PRIVATE_KEY: ${{ secrets.cosign-private-key }}
+          COSIGN_PASSWORD: ${{ secrets.cosign-password }}
