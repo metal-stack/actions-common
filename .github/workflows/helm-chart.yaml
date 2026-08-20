@@ -82,7 +82,7 @@ jobs:
   oci-release:
     name: Helm OCI Publish
     runs-on: ubuntu-latest
-    if: inputs.oci-release
+    if: inputs.oci-release && github.actor != 'dependabot[bot]'
     steps:
         - name: Checkout
           uses: actions/checkout@v7

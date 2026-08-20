@@ -121,7 +121,7 @@ jobs:
   go-build:
     name: Go Build
     runs-on: ubuntu-latest
-    if: inputs.build
+    if: inputs.build && github.actor != 'dependabot[bot]'
     outputs:
       go-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}
     steps:
