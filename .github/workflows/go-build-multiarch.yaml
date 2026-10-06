@@ -42,9 +42,15 @@ on:
         required: false
         type: string
       platforms:
-        description: JSON array of {"platform","goos","goarch","runner"} objects. The binary for each platform is built natively on its dedicated runner, then assembled into a single multiarch image.
-        default: '[{"platform":"linux/amd64","goos":"linux","goarch":"amd64","runner":"ubuntu-latest"},{"platform":"linux/arm64","goos":"linux","goarch":"arm64","runner":"ubuntu-24.04-arm"}]'
-        required: false
+        description: |-
+          JSON array of {"platform","goos","goarch","runner"} objects. The binary for each platform
+          is built natively on its dedicated runner, then assembled into a single multiarch image.
+          Example:
+          [
+            {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
+            {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"}
+          ]
+        required: true
         type: string
 
       image-name:
