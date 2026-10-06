@@ -41,6 +41,12 @@ on:
         required: false
         type: string
 
+      runs-on:
+        description: The runner on which this action is executed.
+        default: ubuntu-latest
+        required: false
+        type: string
+
       image-name:
         description: The resulting container image name.
         default: ${{ github.repository }}
@@ -82,7 +88,7 @@ env:
 jobs:
   go-lint:
     name: Go Lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     if: inputs.lint
     steps:
       - name: Checkout
@@ -103,7 +109,7 @@ jobs:
 
   go-test:
     name: Go Test
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     if: "${{ inputs.test }}"
     steps:
       - name: Checkout
@@ -120,7 +126,7 @@ jobs:
 
   go-build:
     name: Go Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     if: inputs.build
     outputs:
       go-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}

@@ -9,6 +9,12 @@ on:
         required: false
         type: string
 
+      runs-on:
+        description: The runner on which this action is executed.
+        default: ubuntu-latest
+        required: false
+        type: string
+
       registry:
         description: The registry to publish the container artifact to.
         default: ghcr.io
@@ -60,7 +66,7 @@ env:
 jobs:
   container-build:
     name: Container Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     outputs:
       container-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}
     steps:

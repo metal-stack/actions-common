@@ -77,6 +77,7 @@ jobs:
       test-command: go test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
       registry: ghcr.io
       registry-username: ${{ github.actor }}
+      runs-on: ubuntu-latest
       image-name: ${{ github.repository }}
       context: .
       dockerfile: Dockerfile
@@ -102,6 +103,7 @@ jobs:
     with:
       registry: ghcr.io
       registry-username: ${{ github.actor }}
+      runs-on: ubuntu-latest
       image-name: ${{ github.repository }}
       context: .
       dockerfile: Dockerfile
