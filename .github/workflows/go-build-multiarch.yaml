@@ -1,32 +1,22 @@
 ---
-name: Go Build
+name: Go Build (Multiarch)
 
 on:
   workflow_call:
     inputs:
       lint:
-        description: Runs a job to lint the go project.
+        description: Runs lint on the first platform build.
         required: false
         default: true
         type: boolean
       test:
-        description: Runs a job to test the go project.
-        required: false
-        default: true
-        type: boolean
-      build:
-        description: Runs a job to build the go project and publish a Docker container.
-        required: false
-        default: true
-        type: boolean
-      push:
-        description: Pushes the built container image and signs it. Set to false to only build the binary and upload artifacts.
+        description: Runs tests on the first platform build.
         required: false
         default: true
         type: boolean
 
       build-command:
-        description: The command used to build the Go binaries in case needed before building the container.
+        description: The command used to build the Go binary for one platform. The target platform is exposed via the GOOS and GOARCH environment variables.
         required: false
         type: string
       test-command:
@@ -46,6 +36,17 @@ on:
         required: false
         type: string
 
+      runs-on:
+        description: The runner on which the assembly job is executed.
+        default: ubuntu-latest
+        required: false
+        type: string
+      platforms:
+        description: JSON array of {"platform","goos","goarch","runner"} objects. The binary for each platform is built natively on its dedicated runner, then assembled into a single multiarch image.
+        default: '[{"platform":"linux/amd64","goos":"linux","goarch":"amd64","runner":"ubuntu-latest"},{"platform":"linux/arm64","goos":"linux","goarch":"arm64","runner":"ubuntu-24.04-arm"}]'
+        required: false
+        type: string
+
       image-name:
         description: The resulting container image name.
         default: ${{ github.repository }}
@@ -62,19 +63,8 @@ on:
         required: false
         type: string
 
-      runs-on:
-        description: The runner on which this workflow is executed.
-        default: ubuntu-latest
-        required: false
-        type: string
-
       artifact-files:
         description: Allows uploading artifacts in order to re-use them in subsequent jobs. You can pass a file pattern or directory here.
-        required: false
-        type: string
-      artifact-name:
-        description: The name of the uploaded build artifact.
-        default: go-build-artifact
         required: false
         type: string
 
@@ -90,71 +80,52 @@ on:
     outputs:
         go-build-artifacts:
           description: The uploaded build artifacts in case artifact-files were provided.
-          value: ${{ jobs.go-build.outputs.go-build-artifacts }}
+          value: ${{ jobs.build-multiarch.outputs.go-build-artifacts }}
 
 env:
   tag: "" # gets set dynamically during workflow run
 
 jobs:
-  go-lint:
-    name: Go Lint
+  build:
+    name: Go Build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.platforms) }}
+    uses: ./.github/workflows/go-build.yaml
+    with:
+      lint: ${{ matrix.platform == fromJSON(inputs.platforms)[0].platform && inputs.lint }}
+      test: ${{ matrix.platform == fromJSON(inputs.platforms)[0].platform && inputs.test }}
+      build: true
+      push: false
+      build-command: export GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}; ${{ inputs.build-command }}
+      test-command: ${{ inputs.test-command }}
+      registry: ${{ inputs.registry }}
+      registry-username: ${{ inputs.registry-username }}
+      image-name: ${{ inputs.image-name }}
+      dockerfile: ${{ inputs.dockerfile }}
+      context: ${{ inputs.context }}
+      artifact-files: ${{ inputs.artifact-files }}
+      runs-on: ${{ matrix.runner }}
+      artifact-name: go-build-artifact-${{ matrix.goos }}-${{ matrix.goarch }}
+    secrets: inherit
+
+  build-multiarch:
+    name: Build Multiarch Image
     runs-on: ${{ inputs.runs-on }}
-    if: inputs.lint
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: 'go.mod'
-
-      - name: Ensure code is fmted
-        run: |
-          go fmt ./...
-          git diff --exit-code --compact-summary
-
-      - name: Lint Go
-        uses: golangci/golangci-lint-action@v9
-
-  go-test:
-    name: Go Test
-    runs-on: ${{ inputs.runs-on }}
-    if: "${{ inputs.test }}"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: 'go.mod'
-
-      - name: Run tests
-        run: |
-          ${{ inputs.test-command }}
-
-  go-build:
-    name: Go Build
-    runs-on: ${{ inputs.runs-on }}
-    if: inputs.build
+    needs: build
     outputs:
-      go-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}
+      go-build-artifacts: ${{ steps.merge-artifacts.outputs.artifact-id }}
     steps:
-      - name: Registry login
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ inputs.registry }}
-          username: ${{ inputs.registry-username }}
-          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD != '' && secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
-
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Setup Go
-        uses: actions/setup-go@v7
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
         with:
-          go-version-file: 'go.mod'
+          pattern: go-build-artifact-*
+          path: .
+          merge-multiple: true
 
       - name: Make tag
         run: |
@@ -163,10 +134,19 @@ jobs:
           [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'branch' ]] && echo "tag=branch-${GITHUB_REF##*/}" >> $GITHUB_ENV || true
           [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'tag' ]] && echo "tag=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
 
-      - name: Build
+      - name: Resolve platforms
+        id: meta
+        env:
+          INPUT_PLATFORMS: ${{ inputs.platforms }}
         run: |
-          ${{ inputs.build-command }}
-        if: inputs.build-command != ''
+          echo "platforms=$(echo "${INPUT_PLATFORMS}" | jq -r 'map(.platform) | join(",")')" >> "${GITHUB_OUTPUT}"
+
+      - name: Registry login
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry-username }}
+          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD != '' && secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
 
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v4
@@ -174,11 +154,11 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v7
         id: build
-        if: inputs.push
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
-          push: ${{ inputs.push }}
+          platforms: ${{ steps.meta.outputs.platforms }}
+          push: true
           sbom: true
           tags: ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }}
 
@@ -187,10 +167,11 @@ jobs:
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
-          push: ${{ inputs.push }}
+          platforms: ${{ steps.meta.outputs.platforms }}
+          push: true
           sbom: true
           tags: ${{ inputs.registry }}/${{ inputs.image-name }}:latest
-        if: inputs.push && github.event_name == 'release'
+        if: github.event_name == 'release'
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.1.2
@@ -203,13 +184,13 @@ jobs:
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-        if: inputs.push
 
-      - uses: actions/upload-artifact@v7
-        id: artifact-upload-step
-        with:
-          name: ${{ inputs.artifact-name }}
-          path: ${{ inputs.artifact-files }}
-          if-no-files-found: error
-          retention-days: 1
+      - name: Merge build artifacts
+        id: merge-artifacts
         if: inputs.artifact-files != ''
+        uses: actions/upload-artifact/merge@v7
+        with:
+          name: go-build-artifact
+          pattern: go-build-artifact-*
+          delete-merged: true
+          retention-days: 1
