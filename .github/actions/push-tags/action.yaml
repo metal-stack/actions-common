@@ -1,0 +1,32 @@
+---
+name: Push Tags
+description: Derives the tags from the triggering event.
+
+outputs:
+  container_tag:
+    description: The resolved container image tag.
+    value: ${{ steps.container_tag.outputs.container_tag }}
+  helm_tag:
+    description: The resolved helm chart tag.
+    value: ${{ steps.helm_tag.outputs.helm_tag }}
+
+runs:
+  using: composite
+  steps:
+    - name: Make container tag
+      id: container_tag
+      shell: bash
+      run: |
+        [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]] && echo "container_tag=pr-$(echo $GITHUB_REF | awk -F / '{print $3}')-${GITHUB_HEAD_REF##*/}" | tee -a $GITHUB_OUTPUT || true
+        [[ "${GITHUB_EVENT_NAME}" == 'release' ]] && echo "container_tag=${GITHUB_REF##*/}" | tee -a $GITHUB_OUTPUT || true
+        [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'branch' ]] && echo "container_tag=branch-${GITHUB_REF##*/}" | tee -a $GITHUB_OUTPUT || true
+        [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'tag' ]] && echo "container_tag=${GITHUB_REF##*/}" | tee -a $GITHUB_OUTPUT || true
+
+    - name: Make helm tag
+      id: helm_tag
+      shell: bash
+      run: |
+        [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]] && echo "helm_tag=v0.0.0-pr.${{ github.event.number }}" | tee -a $GITHUB_OUTPUT || true
+        [[ "${GITHUB_EVENT_NAME}" == 'release' ]] && echo "helm_tag=${GITHUB_REF##*/}" | tee -a $GITHUB_OUTPUT || true
+        [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'branch' ]] && echo "helm_tag=v0.0.0-${GITHUB_REF##*/}" | tee -a $GITHUB_OUTPUT || true
+        [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'tag' ]] && echo "helm_tag=${GITHUB_REF##*/}" | tee -a $GITHUB_OUTPUT || true
