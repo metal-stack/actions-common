@@ -158,3 +158,17 @@ jobs:
       registry-username: ${{ github.actor }}
       image-name: ${{ github.repository }}
 ```
+
+### GCP Bucket Push `.github/workflows/gcp-bucket-push.yaml`
+
+Pushes artifacts to a Google Bucket. This action requires a `GCP_SA_KEY` credentials file to be passed as a secret.
+
+```yaml
+jobs:
+  release-assets:
+    uses: metal-stack/actions-common/.github/workflows/gcp-bucket-push.yaml@v1
+    with:
+      artifact-ids:
+      bucket:
+      path-prefix: ${{ github.event.repository.name }}
+```
