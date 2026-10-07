@@ -80,7 +80,40 @@ jobs:
       image-name: ${{ github.repository }}
       context: .
       dockerfile: Dockerfile
+      push: true
+      runs-on: ubuntu-latest
       artifact-files: ""
+      artifact-name: go-build-artifact
+```
+
+### Go Build Multiarch `.github/workflows/go-build-multiarch.yaml`
+
+This workflow re-uses the `go-build` workflow already described above. It splits up the build jobs in a matrix defined by the `platforms` input parameter and passes the platform arguments into the `build-command` through environment variables (`GOOS` and `GOARCH`).
+
+The resulting artifacts are then downloaded and the [multi-platform Dockerfile](https://docs.docker.com/build/building/multi-platform/) can be built with those artifacts, like:
+
+```dockerfile
+...
+ARG TARGETARCH
+COPY --chmod=0755 bin/my-binary-linux-${TARGETARCH} /my-binary
+```
+
+For linting and testing, the first-defined platform build job will be utilized.
+
+The rest of the input parameters are identical to `go-build`.
+
+```yaml
+jobs:
+  go-build:
+    uses: metal-stack/actions-common/.github/workflows/go-build-multiarch.yaml@v1
+    secrets: inherit
+    with:
+      platforms:
+        description: |
+          [
+            {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
+            {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"}
+          ]
 ```
 
 ### Container Build `.github/workflows/container-build.yaml`

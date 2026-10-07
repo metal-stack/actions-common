@@ -19,6 +19,11 @@ on:
         required: false
         default: true
         type: boolean
+      push:
+        description: Pushes the built container image and signs it. Set to false to only build the binary and upload artifacts.
+        required: false
+        default: true
+        type: boolean
 
       build-command:
         description: The command used to build the Go binaries in case needed before building the container.
@@ -57,8 +62,19 @@ on:
         required: false
         type: string
 
+      runs-on:
+        description: The runner on which this workflow is executed.
+        default: ubuntu-latest
+        required: false
+        type: string
+
       artifact-files:
         description: Allows uploading artifacts in order to re-use them in subsequent jobs. You can pass a file pattern or directory here.
+        required: false
+        type: string
+      artifact-name:
+        description: The name of the uploaded build artifact.
+        default: go-build-artifact
         required: false
         type: string
 
@@ -82,7 +98,7 @@ env:
 jobs:
   go-lint:
     name: Go Lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     if: inputs.lint
     steps:
       - name: Checkout
@@ -103,7 +119,7 @@ jobs:
 
   go-test:
     name: Go Test
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     if: "${{ inputs.test }}"
     steps:
       - name: Checkout
@@ -120,7 +136,7 @@ jobs:
 
   go-build:
     name: Go Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     if: inputs.build
     outputs:
       go-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}
@@ -158,10 +174,11 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v7
         id: build
+        if: inputs.push
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
-          push: true
+          push: ${{ inputs.push }}
           sbom: true
           tags: ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }}
 
@@ -170,10 +187,10 @@ jobs:
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
-          push: true
+          push: ${{ inputs.push }}
           sbom: true
           tags: ${{ inputs.registry }}/${{ inputs.image-name }}:latest
-        if: github.event_name == 'release'
+        if: inputs.push && github.event_name == 'release'
 
       - name: Install Cosign
         uses: sigstore/cosign-installer@v4.1.2
@@ -186,11 +203,12 @@ jobs:
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        if: inputs.push
 
       - uses: actions/upload-artifact@v7
         id: artifact-upload-step
         with:
-          name: go-build-artifact
+          name: ${{ inputs.artifact-name }}
           path: ${{ inputs.artifact-files }}
           if-no-files-found: error
           retention-days: 1
