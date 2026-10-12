@@ -54,8 +54,6 @@ on:
       DOCKER_REGISTRY_PASSWORD:
         description: The registry password to login with. Falls back to the GITHUB_TOKEN CI secret.
         required: false
-env:
-  tag: "" # gets set dynamically during workflow run
 
 jobs:
   container-build:
@@ -75,11 +73,8 @@ jobs:
         uses: actions/checkout@v7
 
       - name: Make tag
-        run: |
-          [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]] && echo "tag=pr-$(echo $GITHUB_REF | awk -F / '{print $3}')-${GITHUB_HEAD_REF##*/}" >> $GITHUB_ENV || true
-          [[ "${GITHUB_EVENT_NAME}" == 'release' ]] && echo "tag=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
-          [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'branch' ]] && echo "tag=branch-${GITHUB_REF##*/}" >> $GITHUB_ENV || true
-          [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'tag' ]] && echo "tag=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
+        id: tag
+        uses: $/.github/actions/push-tags
 
       - name: Build
         run: |
@@ -96,7 +91,7 @@ jobs:
           context: ${{ inputs.context }}
           push: true
           sbom: true
-          tags: ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }}
+          tags: ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }}
           file: ${{ inputs.dockerfile }}
 
       - name: Build and push latest
@@ -115,7 +110,7 @@ jobs:
       - name: Sign image
         run: |
           cosign sign --yes --key env://COSIGN_PRIVATE_KEY \
-            ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} \
+            ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }} \
             ${{ inputs.registry }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}

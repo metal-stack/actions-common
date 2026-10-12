@@ -35,9 +35,6 @@ on:
         description: The registry password to login with. Falls back to the GITHUB_TOKEN CI secret.
         required: false
 
-env:
-  tag: "" # gets set dynamically during workflow run
-
 jobs:
   oci-release-vector-artifact:
     name: OCI Release Vector Artifact
@@ -54,11 +51,8 @@ jobs:
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD != '' && secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
 
       - name: Make tag
-        run: |
-          [[ "${GITHUB_EVENT_NAME}" == 'pull_request' ]] && echo "tag=pr-$(echo $GITHUB_REF | awk -F / '{print $3}')-${GITHUB_HEAD_REF##*/}" >> $GITHUB_ENV || true
-          [[ "${GITHUB_EVENT_NAME}" == 'release' ]] && echo "tag=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
-          [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'branch' ]] && echo "tag=branch-${GITHUB_REF##*/}" >> $GITHUB_ENV || true
-          [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'tag' ]] && echo "tag=${GITHUB_REF##*/}" >> $GITHUB_ENV || true
+        id: tag
+        uses: $/.github/actions/push-tags
 
       - name: Install Oras
         uses: oras-project/setup-oras@v2
@@ -82,15 +76,15 @@ jobs:
           cd ..
           tar -cpvzf ansible-role.tar.gz ${cwd}
 
-          echo "pusing to ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }}"
+          echo "pusing to ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }}"
 
-          digest=$(oras push ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} \
+          digest=$(oras push ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }} \
               --artifact-type application/vnd.metal-stack.release-vector.v1 \
               ansible-role.tar.gz:application/vnd.metal-stack.ansible-role.v1.tar+gzip \
               --format go-template \
               --template "{{ .digest }}")
 
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} ${{ inputs.registry }}/${{ inputs.image-name }}@${digest}
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }} ${{ inputs.registry }}/${{ inputs.image-name }}@${digest}
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
@@ -100,15 +94,15 @@ jobs:
         run: |
           tar -czvf release.tar.gz release.yaml
 
-          echo "pusing to ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }}"
+          echo "pusing to ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }}"
 
-          digest=$(oras push ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} \
+          digest=$(oras push ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }} \
               --artifact-type application/vnd.metal-stack.release-vector.v1 \
               release.tar.gz:application/vnd.metal-stack.release-vector.v1.tar+gzip \
               --format go-template \
               --template "{{ .digest }}")
 
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ inputs.registry }}/${{ inputs.image-name }}:${{ env.tag }} ${{ inputs.registry }}/${{ inputs.image-name }}@${digest}
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }} ${{ inputs.registry }}/${{ inputs.image-name }}@${digest}
         env:
           COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
