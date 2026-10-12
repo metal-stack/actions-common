@@ -5,12 +5,12 @@ on:
   workflow_call:
     inputs:
       lint:
-        description: Runs lint on the first platform build.
+        description: Runs lint once on the first platform's runner.
         required: false
         default: true
         type: boolean
       test:
-        description: Runs tests on the first platform build.
+        description: Runs tests once on the first platform's runner.
         required: false
         default: true
         type: boolean
@@ -43,12 +43,18 @@ on:
         type: string
       platforms:
         description: |-
-          JSON array of {"platform","goos","goarch","runner"} objects. The binary for each platform
+          JSON array of {"platform","goos","goarch","runner"} objects, with an optional
+          "goarm" (defaults to 7) for 32-bit ARM variants. The binary for each platform
           is built natively on its dedicated runner, then assembled into a single multiarch image.
+          Entries with "build_only": true omit "platform" and are built and uploaded as an
+          artifact but do not contribute to the container image (useful for windows/darwin targets).
           Example:
           [
             {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
-            {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"}
+            {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"},
+            {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "runner": "ubuntu-24.04-arm"},
+            {"build_only": true, "goos": "windows", "goarch": "amd64", "runner": "ubuntu-latest"},
+            {"build_only": true, "goos": "darwin", "goarch": "amd64", "runner": "ubuntu-latest"}
           ]
         required: true
         type: string
@@ -92,19 +98,31 @@ env:
   tag: "" # gets set dynamically during workflow run
 
 jobs:
+  lint-test:
+    uses: ./.github/workflows/go-build.yaml
+    if: inputs.lint || inputs.test
+    with:
+      lint: ${{ inputs.lint }}
+      test: ${{ inputs.test }}
+      build: false
+      test-command: ${{ inputs.test-command }}
+      runs-on: ${{ fromJSON(inputs.platforms)[0].runner }}
+    secrets: inherit
+
   build:
-    name: Go Build (${{ matrix.platform }})
+    name: Go Build (${{ matrix.platform || format('{0}/{1}', matrix.goos, matrix.goarch) }})
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(inputs.platforms) }}
     uses: ./.github/workflows/go-build.yaml
     with:
-      lint: ${{ matrix.platform == fromJSON(inputs.platforms)[0].platform && inputs.lint }}
-      test: ${{ matrix.platform == fromJSON(inputs.platforms)[0].platform && inputs.test }}
-      build: true
+      lint: false
+      test: false
       push: false
-      build-command: export GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }}; ${{ inputs.build-command }}
+      build-command: |
+        export GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} GOARM=${{ matrix.goarm || '7' }}
+        ${{ inputs.build-command }}
       test-command: ${{ inputs.test-command }}
       registry: ${{ inputs.registry }}
       registry-username: ${{ inputs.registry-username }}
@@ -113,7 +131,7 @@ jobs:
       context: ${{ inputs.context }}
       artifact-files: ${{ inputs.artifact-files }}
       runs-on: ${{ matrix.runner }}
-      artifact-name: go-build-artifact-${{ matrix.goos }}-${{ matrix.goarch }}
+      artifact-name: go-build-artifact-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && format('-{0}', matrix.goarm) || '' }}
     secrets: inherit
 
   build-multiarch:
@@ -145,7 +163,7 @@ jobs:
         env:
           INPUT_PLATFORMS: ${{ inputs.platforms }}
         run: |
-          echo "platforms=$(echo "${INPUT_PLATFORMS}" | jq -r 'map(.platform) | join(",")')" >> "${GITHUB_OUTPUT}"
+          echo "platforms=$(echo "${INPUT_PLATFORMS}" | jq -r 'map(select(.build_only != true)) | map(.platform) | join(",")')" >> "${GITHUB_OUTPUT}"
 
       - name: Registry login
         uses: docker/login-action@v4
@@ -153,6 +171,9 @@ jobs:
           registry: ${{ inputs.registry }}
           username: ${{ inputs.registry-username }}
           password: ${{ secrets.DOCKER_REGISTRY_PASSWORD != '' && secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v4
 
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v4

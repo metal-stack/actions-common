@@ -115,9 +115,13 @@ jobs:
 
 ### Go Build Multiarch `.github/workflows/go-build-multiarch.yaml`
 
-This workflow re-uses the `go-build` workflow already described above. It splits up the build jobs in a matrix defined by the `platforms` input parameter and passes the platform arguments into the `build-command` through environment variables (`GOOS` and `GOARCH`).
+This workflow re-uses the `go-build` workflow already described above. It splits up the build jobs in a matrix defined by the `platforms` input parameter and passes the platform arguments into the `build-command` through environment variables (`GOOS`, `GOARCH` and `GOARM`).
 
-The resulting artifacts are then downloaded and the [multi-platform Dockerfile](https://docs.docker.com/build/building/multi-platform/) can be built with those artifacts, like:
+Each platform is described by an object with the OCI `platform` string, the corresponding Go `goos`/`goarch` values and the `runner` used to build the binary. For 32-bit ARM targets you can optionally set `goarm`; it defaults to `7` when omitted, so the common `linux/arm/v7` needs no extra field.
+
+Entries with `build_only: true` omit `platform` and are build-only: the binary is built and uploaded as an artifact, but it does not contribute to the container image. This is useful for e.g. `windows` or `darwin` targets.
+
+The resulting artifacts are then downloaded and the [multi-platform Dockerfile](https://docs.docker.com/build/building/multi-platform/) can be built with those artifacts. `docker/setup-qemu-action` is set up automatically before the multiarch build, so Dockerfiles using `RUN` instructions for foreign platforms work as well.
 
 ```dockerfile
 ...
@@ -125,7 +129,9 @@ ARG TARGETARCH
 COPY --chmod=0755 bin/my-binary-linux-${TARGETARCH} /my-binary
 ```
 
-For linting and testing, the first-defined platform build job will be utilized.
+If you build multiple variants of the same architecture (e.g. `linux/arm/v5` and `linux/arm/v7`), `${TARGETARCH}` alone is not enough to tell them apart. In that case `goarm` includes the variant in the artifact name and you should use `${TARGETVARIANT}` in the Dockerfile.
+
+For linting and testing, a separate job runs once on the first platform's runner.
 
 The rest of the input parameters are identical to `go-build`.
 
@@ -135,12 +141,14 @@ jobs:
     uses: metal-stack/actions-common/.github/workflows/go-build-multiarch.yaml@v1
     secrets: inherit
     with:
-      platforms:
-        description: |
-          [
-            {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
-            {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"}
-          ]
+      platforms: |
+        [
+          {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
+          {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"},
+          {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "runner": "ubuntu-24.04-arm"},
+          {"build_only": true, "goos": "windows", "goarch": "amd64", "runner": "ubuntu-latest"},
+          {"build_only": true, "goos": "darwin", "goarch": "amd64", "runner": "ubuntu-latest"}
+        ]
 ```
 
 ### Container Build `.github/workflows/container-build.yaml`
