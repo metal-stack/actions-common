@@ -137,6 +137,8 @@ jobs:
 
 Publishes files in a Github Release using [action-gh-release](https://github.com/softprops/action-gh-release). Only reacts on `release` pipeline triggers.
 
+The workflow generates an SBOM for the artifacts and puts it into a file called `sbom.spdx.json`.
+
 ```yaml
 jobs:
   release-assets:
@@ -180,6 +182,8 @@ jobs:
 ### GCP Bucket Push `.github/workflows/gcp-bucket-push.yaml`
 
 Pushes artifacts to a Google Bucket. This action requires a `GCP_SA_KEY` credentials file to be passed as a secret.
+
+The workflow generates an SBOM for the artifacts and puts it into a file called `sbom.spdx.json`.
 
 The folder is named according to the [image tag formats](#image-tag-formats).
 

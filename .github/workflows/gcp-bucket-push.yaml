@@ -48,6 +48,15 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v3
 
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: artifacts
+          format: spdx-json
+          output-file: artifacts/sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
       - name: Upload artifacts
         run: |
           cd artifacts
