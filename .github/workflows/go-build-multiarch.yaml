@@ -92,20 +92,20 @@ on:
     outputs:
         go-build-artifacts:
           description: The uploaded build artifacts in case artifact-files were provided.
-          value: ${{ jobs.build-multiarch.outputs.go-build-artifacts }}
+          value: ${{ jobs.go-build-multiarch.outputs.go-build-artifacts }}
 
 jobs:
-  lint:
+  go-lint:
     uses: ./.github/workflows/go-lint.yaml
     if: inputs.lint
 
-  test:
+  go-test:
     uses: ./.github/workflows/go-test.yaml
     if: inputs.test
     with:
       test-command: ${{ inputs.test-command }}
 
-  build:
+  go-build:
     name: Go Build (${{ matrix.platform || format('{0}/{1}', matrix.goos, matrix.goarch) }})
     strategy:
       fail-fast: false
@@ -127,10 +127,10 @@ jobs:
       artifact-name: go-build-artifact-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && format('-{0}', matrix.goarm) || '' }}
     secrets: inherit
 
-  build-multiarch:
+  go-build-multiarch:
     name: Build Multiarch Image
     runs-on: ${{ inputs.runs-on }}
-    needs: build
+    needs: go-build
     outputs:
       go-build-artifacts: ${{ steps.merge-artifacts.outputs.artifact-id }}
     steps:

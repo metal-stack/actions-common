@@ -90,23 +90,23 @@ on:
     outputs:
         go-build-artifacts:
           description: The uploaded build artifacts in case artifact-files were provided.
-          value: ${{ jobs.build.outputs.go-build-artifacts }}
+          value: ${{ jobs.go-build.outputs.go-build-artifacts }}
 
 jobs:
-  lint:
+  go-lint:
     uses: ./.github/workflows/go-lint.yaml
     if: inputs.lint
     with:
       runs-on: ${{ inputs.runs-on }}
 
-  test:
+  go-test:
     uses: ./.github/workflows/go-test.yaml
     if: inputs.test
     with:
       test-command: ${{ inputs.test-command }}
       runs-on: ${{ inputs.runs-on }}
 
-  build:
+  go-build:
     uses: ./.github/workflows/go-compile.yaml
     if: inputs.build
     with:
