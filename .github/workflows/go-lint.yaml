@@ -1,0 +1,32 @@
+---
+name: Go Lint
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: The runner on which this workflow is executed.
+        default: ubuntu-latest
+        required: false
+        type: string
+
+jobs:
+  go-lint:
+    name: Go Lint
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Ensure code is fmted
+        run: |
+          go fmt ./...
+          git diff --exit-code --compact-summary
+
+      - name: Lint Go
+        uses: golangci/golangci-lint-action@v9

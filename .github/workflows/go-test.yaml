@@ -1,0 +1,33 @@
+---
+name: Go Test
+
+on:
+  workflow_call:
+    inputs:
+      test-command:
+        description: The command used to test the Go repository.
+        required: false
+        default: go test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
+        type: string
+      runs-on:
+        description: The runner on which this workflow is executed.
+        default: ubuntu-latest
+        required: false
+        type: string
+
+jobs:
+  go-test:
+    name: Go Test
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Run tests
+        run: |
+          ${{ inputs.test-command }}

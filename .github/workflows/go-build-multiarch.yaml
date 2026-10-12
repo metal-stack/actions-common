@@ -1,0 +1,178 @@
+---
+name: Go Build (Multiarch)
+
+on:
+  workflow_call:
+    inputs:
+      platforms:
+        description: |-
+          JSON array of {"platform","goos","goarch","runner"} objects, with an optional
+          "goarm" (defaults to 7) for 32-bit ARM variants. The binary for each platform
+          is built natively on its dedicated runner, then assembled into a single multiarch image.
+          Entries with "build_only": true omit "platform" and are built and uploaded as an
+          artifact but do not contribute to the container image (useful for windows/darwin targets).
+          Example:
+          [
+            {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
+            {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"},
+            {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "runner": "ubuntu-24.04-arm"},
+            {"build_only": true, "goos": "windows", "goarch": "amd64", "runner": "ubuntu-latest"},
+            {"build_only": true, "goos": "darwin", "goarch": "amd64", "runner": "ubuntu-latest"}
+          ]
+        required: true
+        type: string
+      runs-on:
+        description: The runner on which the assembly job is executed.
+        default: ubuntu-latest
+        required: false
+        type: string
+
+      lint:
+        description: Runs lint once on ubuntu-latest.
+        required: false
+        default: true
+        type: boolean
+      test:
+        description: Runs tests once on ubuntu-latest.
+        required: false
+        default: true
+        type: boolean
+
+      build-command:
+        description: The command used to build the Go binary for one platform. The target platform is exposed via the GOOS and GOARCH environment variables.
+        required: false
+        type: string
+      test-command:
+        description: The command used to test the Go repository.
+        required: false
+        default: go test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
+        type: string
+
+      registry:
+        description: The registry to publish the container artifact to.
+        default: ghcr.io
+        required: false
+        type: string
+      registry-username:
+        description: The registry username to login with.
+        default: ${{ github.actor }}
+        required: false
+        type: string
+
+      image-name:
+        description: The resulting container image name.
+        default: ${{ github.repository }}
+        required: false
+        type: string
+      dockerfile:
+        description: The dockerfile used for building the container.
+        default: "./Dockerfile"
+        required: false
+        type: string
+      context:
+        description: The build context used for building the container.
+        default: .
+        required: false
+        type: string
+
+      artifact-files:
+        description: Allows uploading artifacts in order to re-use them in subsequent jobs. You can pass a file pattern or directory here.
+        required: false
+        type: string
+
+    secrets:
+      COSIGN_PRIVATE_KEY:
+        required: true
+      COSIGN_PASSWORD:
+        required: true
+      DOCKER_REGISTRY_PASSWORD:
+        description: The registry password to login with. Falls back to the GITHUB_TOKEN CI secret.
+        required: false
+
+    outputs:
+        go-build-artifacts:
+          description: The uploaded build artifacts in case artifact-files were provided.
+          value: ${{ jobs.go-build-multiarch.outputs.go-build-artifacts }}
+
+jobs:
+  go-lint:
+    uses: ./.github/workflows/go-lint.yaml
+    if: inputs.lint
+
+  go-test:
+    uses: ./.github/workflows/go-test.yaml
+    if: inputs.test
+    with:
+      test-command: ${{ inputs.test-command }}
+
+  go-build:
+    name: Go Build (${{ matrix.platform || format('{0}/{1}', matrix.goos, matrix.goarch) }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(inputs.platforms) }}
+    uses: ./.github/workflows/go-compile.yaml
+    with:
+      push: false
+      build-command: |
+        export GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} GOARM=${{ matrix.goarm || '7' }}
+        ${{ inputs.build-command }}
+      registry: ${{ inputs.registry }}
+      registry-username: ${{ inputs.registry-username }}
+      image-name: ${{ inputs.image-name }}
+      dockerfile: ${{ inputs.dockerfile }}
+      context: ${{ inputs.context }}
+      artifact-files: ${{ inputs.artifact-files }}
+      runs-on: ${{ matrix.runner }}
+      artifact-name: go-build-artifact-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && format('-{0}', matrix.goarm) || '' }}
+    secrets: inherit
+
+  go-build-multiarch:
+    name: Build Multiarch Image
+    runs-on: ${{ inputs.runs-on }}
+    needs: go-build
+    outputs:
+      go-build-artifacts: ${{ steps.merge-artifacts.outputs.artifact-id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: go-build-artifact-*
+          path: .
+          merge-multiple: true
+
+      - name: Resolve platforms
+        id: meta
+        env:
+          INPUT_PLATFORMS: ${{ inputs.platforms }}
+        run: |
+          echo "platforms=$(echo "${INPUT_PLATFORMS}" | jq -r 'map(select(.build_only != true)) | map(.platform) | join(",")')" >> "${GITHUB_OUTPUT}"
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Docker push and sign
+        uses: $/.github/actions/docker-push-and-sign
+        with:
+          registry: ${{ inputs.registry }}
+          registry-username: ${{ inputs.registry-username }}
+          registry-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD != '' && secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
+          cosign-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+          image-name: ${{ inputs.image-name }}
+          dockerfile: ${{ inputs.dockerfile }}
+          context: ${{ inputs.context }}
+          platforms: ${{ steps.meta.outputs.platforms }}
+
+      - name: Merge build artifacts
+        id: merge-artifacts
+        if: inputs.artifact-files != ''
+        uses: actions/upload-artifact/merge@v7
+        with:
+          name: go-build-artifact
+          pattern: go-build-artifact-*
+          delete-merged: true
+          retention-days: 1

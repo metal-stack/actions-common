@@ -1,0 +1,3 @@
+FROM alpine
+ARG TARGETARCH
+COPY actions-common-linux-${TARGETARCH} /actions-common

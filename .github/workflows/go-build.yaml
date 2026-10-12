@@ -19,6 +19,11 @@ on:
         required: false
         default: true
         type: boolean
+      push:
+        description: Pushes the built container image and signs it. Set to false to only build the binary and upload artifacts.
+        required: false
+        default: true
+        type: boolean
 
       build-command:
         description: The command used to build the Go binaries in case needed before building the container.
@@ -57,8 +62,19 @@ on:
         required: false
         type: string
 
+      runs-on:
+        description: The runner on which this workflow is executed.
+        default: ubuntu-latest
+        required: false
+        type: string
+
       artifact-files:
         description: Allows uploading artifacts in order to re-use them in subsequent jobs. You can pass a file pattern or directory here.
+        required: false
+        type: string
+      artifact-name:
+        description: The name of the uploaded build artifact.
+        default: go-build-artifact
         required: false
         type: string
 
@@ -78,114 +94,30 @@ on:
 
 jobs:
   go-lint:
-    name: Go Lint
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/go-lint.yaml
     if: inputs.lint
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: 'go.mod'
-
-      - name: Ensure code is fmted
-        run: |
-          go fmt ./...
-          git diff --exit-code --compact-summary
-
-      - name: Lint Go
-        uses: golangci/golangci-lint-action@v9
+    with:
+      runs-on: ${{ inputs.runs-on }}
 
   go-test:
-    name: Go Test
-    runs-on: ubuntu-latest
-    if: "${{ inputs.test }}"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: 'go.mod'
-
-      - name: Run tests
-        run: |
-          ${{ inputs.test-command }}
+    uses: ./.github/workflows/go-test.yaml
+    if: inputs.test
+    with:
+      test-command: ${{ inputs.test-command }}
+      runs-on: ${{ inputs.runs-on }}
 
   go-build:
-    name: Go Build
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/go-compile.yaml
     if: inputs.build
-    outputs:
-      go-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}
-    steps:
-      - name: Registry login
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ inputs.registry }}
-          username: ${{ inputs.registry-username }}
-          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD != '' && secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
-
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: 'go.mod'
-
-      - name: Make tag
-        id: tag
-        uses: $/.github/actions/push-tags
-
-      - name: Build
-        run: |
-          ${{ inputs.build-command }}
-        if: inputs.build-command != ''
-
-      - name: Setup Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build and push
-        uses: docker/build-push-action@v7
-        id: build
-        with:
-          context: ${{ inputs.context }}
-          file: ${{ inputs.dockerfile }}
-          push: true
-          sbom: true
-          tags: ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }}
-
-      - name: Build and push latest
-        uses: docker/build-push-action@v7
-        with:
-          context: ${{ inputs.context }}
-          file: ${{ inputs.dockerfile }}
-          push: true
-          sbom: true
-          tags: ${{ inputs.registry }}/${{ inputs.image-name }}:latest
-        if: github.event_name == 'release'
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.1.2
-
-      - name: Sign image
-        run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY \
-            ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }} \
-            ${{ inputs.registry }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}
-        env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-
-      - uses: actions/upload-artifact@v7
-        id: artifact-upload-step
-        with:
-          name: go-build-artifact
-          path: ${{ inputs.artifact-files }}
-          if-no-files-found: error
-          retention-days: 1
-        if: inputs.artifact-files != ''
+    with:
+      push: ${{ inputs.push }}
+      build-command: ${{ inputs.build-command }}
+      registry: ${{ inputs.registry }}
+      registry-username: ${{ inputs.registry-username }}
+      image-name: ${{ inputs.image-name }}
+      dockerfile: ${{ inputs.dockerfile }}
+      context: ${{ inputs.context }}
+      runs-on: ${{ inputs.runs-on }}
+      artifact-files: ${{ inputs.artifact-files }}
+      artifact-name: ${{ inputs.artifact-name }}
+    secrets: inherit
