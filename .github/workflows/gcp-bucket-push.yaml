@@ -18,6 +18,11 @@ on:
         required: false
         default: ${{ github.event.repository.name }}
         type: string
+      default-branch-folder:
+        description: The folder name to use for pushes to the default branch.
+        required: false
+        default: stable
+        type: string
 
     secrets:
       GCP_SA_KEY:
@@ -35,6 +40,8 @@ jobs:
       - name: Make tag
         id: tag
         uses: $/.github/actions/push-tags
+        with:
+          default-branch-folder: ${{ inputs.default-branch-folder }}
 
       - uses: actions/download-artifact@v8
         with:
