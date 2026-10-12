@@ -4,6 +4,29 @@ name: Go Build (Multiarch)
 on:
   workflow_call:
     inputs:
+      platforms:
+        description: |-
+          JSON array of {"platform","goos","goarch","runner"} objects, with an optional
+          "goarm" (defaults to 7) for 32-bit ARM variants. The binary for each platform
+          is built natively on its dedicated runner, then assembled into a single multiarch image.
+          Entries with "build_only": true omit "platform" and are built and uploaded as an
+          artifact but do not contribute to the container image (useful for windows/darwin targets).
+          Example:
+          [
+            {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
+            {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"},
+            {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "runner": "ubuntu-24.04-arm"},
+            {"build_only": true, "goos": "windows", "goarch": "amd64", "runner": "ubuntu-latest"},
+            {"build_only": true, "goos": "darwin", "goarch": "amd64", "runner": "ubuntu-latest"}
+          ]
+        required: true
+        type: string
+      runs-on:
+        description: The runner on which the assembly job is executed.
+        default: ubuntu-latest
+        required: false
+        type: string
+
       lint:
         description: Runs lint once on the first platform's runner.
         required: false
@@ -34,29 +57,6 @@ on:
         description: The registry username to login with.
         default: ${{ github.actor }}
         required: false
-        type: string
-
-      runs-on:
-        description: The runner on which the assembly job is executed.
-        default: ubuntu-latest
-        required: false
-        type: string
-      platforms:
-        description: |-
-          JSON array of {"platform","goos","goarch","runner"} objects, with an optional
-          "goarm" (defaults to 7) for 32-bit ARM variants. The binary for each platform
-          is built natively on its dedicated runner, then assembled into a single multiarch image.
-          Entries with "build_only": true omit "platform" and are built and uploaded as an
-          artifact but do not contribute to the container image (useful for windows/darwin targets).
-          Example:
-          [
-            {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
-            {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"},
-            {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "runner": "ubuntu-24.04-arm"},
-            {"build_only": true, "goos": "windows", "goarch": "amd64", "runner": "ubuntu-latest"},
-            {"build_only": true, "goos": "darwin", "goarch": "amd64", "runner": "ubuntu-latest"}
-          ]
-        required: true
         type: string
 
       image-name:
