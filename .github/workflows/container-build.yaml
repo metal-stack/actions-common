@@ -8,6 +8,11 @@ on:
         description: The command used to build the project in case needed before building the container.
         required: false
         type: string
+      push:
+        description: Pushes the built container image and signs it. Set to false to only build the binary and upload artifacts.
+        required: false
+        default: true
+        type: boolean
 
       registry:
         description: The registry to publish the container artifact to.
@@ -36,6 +41,12 @@ on:
         required: false
         type: string
 
+      runs-on:
+        description: The runner on which this workflow is executed.
+        default: ubuntu-latest
+        required: false
+        type: string
+
       artifact-files:
         description: Allows uploading artifacts in order to re-use them in subsequent jobs. You can pass a file pattern or directory here.
         required: false
@@ -58,63 +69,31 @@ on:
 jobs:
   container-build:
     name: Container Build
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runs-on }}
     outputs:
       container-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}
     steps:
-      - name: Registry login
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ inputs.registry }}
-          username: ${{ inputs.registry-username }}
-          password: ${{ secrets.DOCKER_REGISTRY_PASSWORD != '' && secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
-
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Make tag
-        id: tag
-        uses: $/.github/actions/push-tags
 
       - name: Build
         run: |
           ${{ inputs.build-command }}
         if: inputs.build-command != ''
 
-      - name: Setup Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Build and push
-        uses: docker/build-push-action@v7
-        id: build
+      - name: Docker push and sign
+        uses: $/.github/actions/docker-push-and-sign
         with:
+          registry: ${{ inputs.registry }}
+          registry-username: ${{ inputs.registry-username }}
+          registry-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD != '' && secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
+          cosign-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
+          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+          image-name: ${{ inputs.image-name }}
+          dockerfile: ${{ inputs.dockerfile }}
           context: ${{ inputs.context }}
-          push: true
           sbom: true
-          tags: ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }}
-          file: ${{ inputs.dockerfile }}
-
-      - name: Build and push latest
-        uses: docker/build-push-action@v7
-        with:
-          context: ${{ inputs.context }}
-          push: true
-          sbom: true
-          tags: ${{ inputs.registry }}/${{ inputs.image-name }}:latest
-          file: ${{ inputs.dockerfile }}
-        if: github.event_name == 'release'
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v4.1.2
-
-      - name: Sign image
-        run: |
-          cosign sign --yes --key env://COSIGN_PRIVATE_KEY \
-            ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }} \
-            ${{ inputs.registry }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}
-        env:
-          COSIGN_PRIVATE_KEY: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+        if: inputs.push
 
       - uses: actions/upload-artifact@v7
         id: artifact-upload-step

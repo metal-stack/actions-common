@@ -1,0 +1,97 @@
+---
+name: Docker push and sign
+description: Pushes a docker container and signs it using cosign.
+
+inputs:
+  registry:
+    description: The registry to publish the container artifact to.
+    default: ghcr.io
+    required: false
+  registry-username:
+    description: The registry username to login with.
+    default: ${{ github.actor }}
+    required: false
+  registry-password:
+    description: The registry password to login with.
+    required: true
+
+  cosign-key:
+    description: The cosign key to sign the container with.
+    required: false
+  cosign-password:
+    description: The cosign password used for signing the container.
+    required: false
+
+  image-name:
+    description: The resulting container image name.
+    default: ${{ github.repository }}
+    required: false
+  dockerfile:
+    description: The dockerfile used for building the container.
+    default: "./Dockerfile"
+    required: false
+  context:
+    description: The build context used for building the container.
+    default: .
+    required: false
+  platforms:
+    description: The platforms for building the container.
+    default: linux/amd64
+    required: false
+  sbom:
+    description: Attests the built container image with an SBOM.
+    required: false
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+      - name: Make tag
+        id: tag
+        uses: $/.github/actions/push-tags
+
+      - name: Registry login
+        uses: docker/login-action@v4
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ inputs.registry-username }}
+          password: ${{ inputs.registry-password }}
+
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push
+        uses: docker/build-push-action@v7
+        id: build
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          platforms: ${{ inputs.platforms }}
+          push: true
+          sbom: ${{ inputs.sbom }}
+          tags: ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }}
+
+      - name: Build and push latest
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
+          platforms: ${{ inputs.platforms }}
+          push: true
+          sbom: ${{ inputs.sbom }}
+          tags: ${{ inputs.registry }}/${{ inputs.image-name }}:latest
+        if: github.event_name == 'release'
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v4.1.2
+
+      - name: Sign image
+        shell: bash
+        run: |
+          cosign sign --yes --key env://COSIGN_PRIVATE_KEY \
+            ${{ inputs.registry }}/${{ inputs.image-name }}:${{ steps.tag.outputs.container_tag }} \
+            ${{ inputs.registry }}/${{ inputs.image-name }}@${{ steps.build.outputs.digest }}
+        if: inputs.cosign-key != '' && inputs.cosign-password != ''
+        env:
+          COSIGN_PRIVATE_KEY: ${{ inputs.cosign-key }}
+          COSIGN_PASSWORD: ${{ inputs.cosign-password }}
