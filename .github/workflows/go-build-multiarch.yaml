@@ -28,12 +28,12 @@ on:
         type: string
 
       lint:
-        description: Runs lint once on the first platform's runner.
+        description: Runs lint once on ubuntu-latest.
         required: false
         default: true
         type: boolean
       test:
-        description: Runs tests once on the first platform's runner.
+        description: Runs tests once on ubuntu-latest.
         required: false
         default: true
         type: boolean
@@ -95,16 +95,15 @@ on:
           value: ${{ jobs.build-multiarch.outputs.go-build-artifacts }}
 
 jobs:
-  lint-test:
-    uses: ./.github/workflows/go-build.yaml
-    if: inputs.lint || inputs.test
+  lint:
+    uses: ./.github/workflows/go-lint.yaml
+    if: inputs.lint
+
+  test:
+    uses: ./.github/workflows/go-test.yaml
+    if: inputs.test
     with:
-      lint: ${{ inputs.lint }}
-      test: ${{ inputs.test }}
-      build: false
       test-command: ${{ inputs.test-command }}
-      runs-on: ${{ fromJSON(inputs.platforms)[0].runner }}
-    secrets: inherit
 
   build:
     name: Go Build (${{ matrix.platform || format('{0}/{1}', matrix.goos, matrix.goarch) }})
@@ -112,15 +111,12 @@ jobs:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(inputs.platforms) }}
-    uses: ./.github/workflows/go-build.yaml
+    uses: ./.github/workflows/go-compile.yaml
     with:
-      lint: false
-      test: false
       push: false
       build-command: |
         export GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} GOARM=${{ matrix.goarm || '7' }}
         ${{ inputs.build-command }}
-      test-command: ${{ inputs.test-command }}
       registry: ${{ inputs.registry }}
       registry-username: ${{ inputs.registry-username }}
       image-name: ${{ inputs.image-name }}

@@ -88,6 +88,8 @@ Builds a Go binary and publishes it as a docker container image, including:
 - Embeds an SBOM into the resulting Docker image using Buildx.
 - Signs the resulting container image using [cosign](https://github.com/sigstore/cosign).
 
+`go-build.yaml` combines the `go-lint.yaml`, `go-test.yaml` and `go-compile.yaml` workflows described below. Call those building blocks directly if you only need a single step.
+
 The image is tagged according to the [image tag formats](#image-tag-formats).
 
 We encourage using the `build-command` and then using a Dockerfile that just copies over the build's binaries instead of building the artifacts directly in the Dockerfile. The advantage is that CI caches can be used properly and build times are reduced drastically.
@@ -115,7 +117,7 @@ jobs:
 
 ### Go Build Multiarch `.github/workflows/go-build-multiarch.yaml`
 
-This workflow re-uses the `go-build` workflow already described above. It splits up the build jobs in a matrix defined by the `platforms` input parameter and passes the platform arguments into the `build-command` through environment variables (`GOOS`, `GOARCH` and `GOARM`).
+Splits up the build jobs in a matrix defined by the `platforms` input parameter and passes the platform arguments into the `build-command` through environment variables (`GOOS`, `GOARCH` and `GOARM`).
 
 Each platform is described by an object with the OCI `platform` input string, the corresponding Go `goos` / `goarch` values and the `runner` used to build the binary. For 32-bit ARM targets you can optionally set `goarm`; it defaults to `7` when omitted, so the common `linux/arm/v7` needs no extra field.
 
@@ -129,7 +131,7 @@ COPY --chmod=0755 bin/my-binary-linux-${TARGETARCH} /my-binary
 
 Note that `platform` entries can use `build_only: true`: the binary is then built and uploaded as an artifact, but it does not contribute to the container image. This is useful for e.g. `windows` or `darwin` targets.
 
-For linting and testing, a separate job runs once on the first platform's runner.
+For linting and testing, separate jobs run once on `ubuntu-latest`.
 
 The rest of the input parameters are identical to `go-build`.
 
@@ -147,6 +149,59 @@ jobs:
           {"build_only": true, "goos": "windows", "goarch": "amd64", "runner": "ubuntu-latest"},
           {"build_only": true, "goos": "darwin", "goarch": "amd64", "runner": "ubuntu-latest"}
         ]
+```
+
+### Go Lint `.github/workflows/go-lint.yaml`
+
+- Lints a Golang repository using [golangci-lint-action](https://github.com/golangci/golangci-lint-action).
+- Verifies formatting with `go fmt`.
+
+```yaml
+jobs:
+  go-lint:
+    uses: metal-stack/actions-common/.github/workflows/go-lint.yaml@v1
+    with:
+      runs-on: ubuntu-latest
+```
+
+### Go Test `.github/workflows/go-test.yaml`
+
+- Tests a Golang repository
+
+```yaml
+jobs:
+  go-test:
+    uses: metal-stack/actions-common/.github/workflows/go-test.yaml@v1
+    with:
+      test-command: go test ./... -coverprofile=coverage.out -covermode=atomic && go tool cover -func=coverage.out
+      runs-on: ubuntu-latest
+```
+
+### Go Compile `.github/workflows/go-compile.yaml`
+
+Builds a Go binary and publishes it as a docker container image, including:
+
+- Embeds an SBOM into the resulting Docker image using Buildx.
+- Signs the resulting container image using [cosign](https://github.com/sigstore/cosign).
+
+The image is tagged according to the [image tag formats](#image-tag-formats).
+
+```yaml
+jobs:
+  go-compile:
+    uses: metal-stack/actions-common/.github/workflows/go-compile.yaml@v1
+    secrets: inherit
+    with:
+      build-command: make go
+      registry: ghcr.io
+      registry-username: ${{ github.actor }}
+      image-name: ${{ github.repository }}
+      context: .
+      dockerfile: Dockerfile
+      push: true
+      runs-on: ubuntu-latest
+      artifact-files: ""
+      artifact-name: go-build-artifact
 ```
 
 ### Container Build `.github/workflows/container-build.yaml`

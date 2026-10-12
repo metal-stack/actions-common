@@ -90,86 +90,34 @@ on:
     outputs:
         go-build-artifacts:
           description: The uploaded build artifacts in case artifact-files were provided.
-          value: ${{ jobs.go-build.outputs.go-build-artifacts }}
+          value: ${{ jobs.build.outputs.go-build-artifacts }}
 
 jobs:
-  go-lint:
-    name: Go Lint
-    runs-on: ${{ inputs.runs-on }}
+  lint:
+    uses: ./.github/workflows/go-lint.yaml
     if: inputs.lint
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
+    with:
+      runs-on: ${{ inputs.runs-on }}
 
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: 'go.mod'
+  test:
+    uses: ./.github/workflows/go-test.yaml
+    if: inputs.test
+    with:
+      test-command: ${{ inputs.test-command }}
+      runs-on: ${{ inputs.runs-on }}
 
-      - name: Ensure code is fmted
-        run: |
-          go fmt ./...
-          git diff --exit-code --compact-summary
-
-      - name: Lint Go
-        uses: golangci/golangci-lint-action@v9
-
-  go-test:
-    name: Go Test
-    runs-on: ${{ inputs.runs-on }}
-    if: "${{ inputs.test }}"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: 'go.mod'
-
-      - name: Run tests
-        run: |
-          ${{ inputs.test-command }}
-
-  go-build:
-    name: Go Build
-    runs-on: ${{ inputs.runs-on }}
+  build:
+    uses: ./.github/workflows/go-compile.yaml
     if: inputs.build
-    outputs:
-      go-build-artifacts: ${{ steps.artifact-upload-step.outputs.artifact-id }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Setup Go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: 'go.mod'
-
-      - name: Build
-        run: |
-          ${{ inputs.build-command }}
-        if: inputs.build-command != ''
-
-      - name: Docker push and sign
-        uses: $/.github/actions/docker-push-and-sign
-        with:
-          registry: ${{ inputs.registry }}
-          registry-username: ${{ inputs.registry-username }}
-          registry-password: ${{ secrets.DOCKER_REGISTRY_PASSWORD != '' && secrets.DOCKER_REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
-          cosign-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-          cosign-password: ${{ secrets.COSIGN_PASSWORD }}
-          image-name: ${{ inputs.image-name }}
-          dockerfile: ${{ inputs.dockerfile }}
-          context: ${{ inputs.context }}
-          sbom: true
-        if: inputs.push
-
-      - uses: actions/upload-artifact@v7
-        id: artifact-upload-step
-        with:
-          name: ${{ inputs.artifact-name }}
-          path: ${{ inputs.artifact-files }}
-          if-no-files-found: error
-          retention-days: 1
-        if: inputs.artifact-files != ''
+    with:
+      push: ${{ inputs.push }}
+      build-command: ${{ inputs.build-command }}
+      registry: ${{ inputs.registry }}
+      registry-username: ${{ inputs.registry-username }}
+      image-name: ${{ inputs.image-name }}
+      dockerfile: ${{ inputs.dockerfile }}
+      context: ${{ inputs.context }}
+      runs-on: ${{ inputs.runs-on }}
+      artifact-files: ${{ inputs.artifact-files }}
+      artifact-name: ${{ inputs.artifact-name }}
+    secrets: inherit
