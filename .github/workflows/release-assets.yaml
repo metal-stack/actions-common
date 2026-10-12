@@ -23,9 +23,22 @@ jobs:
       - uses: actions/download-artifact@v8
         with:
           artifact-ids: ${{ inputs.artifact-ids }}
+          path: artifacts
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: artifacts
+          format: spdx-json
+          output-file: artifacts/sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
 
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v3
         with:
-          files: ${{ inputs.files }}
+          working_directory: artifacts
+          files: |
+            ${{ inputs.files }}
+            sbom.spdx.json
           fail_on_unmatched_files: true

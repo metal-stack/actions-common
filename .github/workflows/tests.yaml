@@ -48,6 +48,15 @@ jobs:
         ./container-build-artifact/*
         ./go-build-artifact/*
 
+  gcp-bucket-push:
+    uses: ./.github/workflows/gcp-bucket-push.yaml
+    secrets: inherit
+    needs:
+      - go-build
+    with:
+      artifact-ids: ${{ needs.go-build.outputs.go-build-artifacts }}
+      bucket: images.metal-pod.io
+
   helm-chart:
     uses: ./.github/workflows/helm-chart.yaml
     secrets: inherit

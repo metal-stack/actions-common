@@ -1,0 +1,70 @@
+---
+name: Push Artifacts to GCP Bucket
+
+on:
+  workflow_call:
+    inputs:
+      artifact-ids:
+        description: The artifact ids from the upload-artifact job.
+        required: true
+        type: string
+
+      bucket:
+        description: The bucket to which the artifacts will be uploaded.
+        required: true
+        type: string
+      path-prefix:
+        description: The path to which the artifacts will be uploaded.
+        required: false
+        default: ${{ github.event.repository.name }}
+        type: string
+      default-branch-folder:
+        description: The folder name to use for pushes to the default branch.
+        required: false
+        default: stable
+        type: string
+
+    secrets:
+      GCP_SA_KEY:
+        description: The GCP service account json.
+        required: true
+
+jobs:
+  gcp-bucket-push:
+    name: Push artifacts to GCP bucket
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Make tag
+        id: tag
+        uses: $/.github/actions/push-tags
+        with:
+          default-branch-folder: ${{ inputs.default-branch-folder }}
+
+      - uses: actions/download-artifact@v8
+        with:
+          artifact-ids: ${{ inputs.artifact-ids }}
+          path: artifacts
+
+      - uses: google-github-actions/auth@v3
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: artifacts
+          format: spdx-json
+          output-file: artifacts/sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Upload artifacts
+        run: |
+          cd artifacts
+          gcloud storage cp --cache-control=no-store --recursive . gs://${{ inputs.bucket }}/${{ inputs.path-prefix }}/${{ steps.tag.outputs.folder }}/
