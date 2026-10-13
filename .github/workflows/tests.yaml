@@ -17,6 +17,7 @@ jobs:
     secrets: inherit
     with:
       build-command: make go
+      lint-args: --timeout=30s
       artifact-files: |
         bin/
 
