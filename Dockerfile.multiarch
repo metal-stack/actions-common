@@ -1,3 +1,4 @@
 FROM alpine
 ARG TARGETARCH
-COPY actions-common-linux-${TARGETARCH} /actions-common
+ARG TARGETVARIANT
+COPY bin/actions-common-linux-${TARGETARCH}${TARGETVARIANT:+-${TARGETVARIANT}} /actions-common

@@ -117,16 +117,14 @@ jobs:
 
 ### Go Build Multiarch `.github/workflows/go-build-multiarch.yaml`
 
-Splits up the build jobs in a matrix defined by the `platforms` input parameter and passes the platform arguments into the `build-command` through environment variables (`GOOS`, `GOARCH` and `GOARM`).
+Splits up the build jobs in a matrix defined by the `platforms` input parameter and passes the platform arguments into the `build-command` through environment variables (`GOOS`, `GOARCH` and `GOARM`). `GOARM` is only exported when set, so entries without a variant are unaffected.
 
-Each platform is described by an object with the OCI `platform` input string, the corresponding Go `goos` / `goarch` values and the `runner` used to build the binary. For 32-bit ARM targets you can optionally set `goarm`; it defaults to `7` when omitted, so the common `linux/arm/v7` needs no extra field.
-
-The resulting artifacts are then downloaded and the [multi-platform Dockerfile](https://docs.docker.com/build/building/multi-platform/) can be built with those artifacts. `docker/setup-qemu-action` is set up automatically before the multiarch build, so Dockerfiles using `RUN` instructions for foreign platforms work as well.
+The per-platform binaries should be named after the platform: `<name>-<goos>-<goarch>` for e.g. `linux/amd64` and `linux/arm64`, and `<name>-<goos>-<goarch>-v<goarm>` for `linux/arm/v7`. You can then use them in the project's Dockerfile like this:
 
 ```dockerfile
-...
 ARG TARGETARCH
-COPY --chmod=0755 bin/my-binary-linux-${TARGETARCH} /my-binary
+ARG TARGETVARIANT
+COPY --chmod=0755 bin/my-binary-linux-${TARGETARCH}${TARGETVARIANT:+-${TARGETVARIANT}} /my-binary
 ```
 
 Note that `platform` entries can use `build_only: true`: the binary is then built and uploaded as an artifact, but it does not contribute to the container image. This is useful for e.g. `windows` or `darwin` targets.
@@ -144,8 +142,8 @@ jobs:
       platforms: |
         [
           {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
-          {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"},
-          {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "runner": "ubuntu-24.04-arm"},
+          {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-26.04-arm"},
+          {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "goarm": "7", "runner": "ubuntu-26.04-arm"},
           {"build_only": true, "goos": "windows", "goarch": "amd64", "runner": "ubuntu-latest"},
           {"build_only": true, "goos": "darwin", "goarch": "amd64", "runner": "ubuntu-latest"}
         ]

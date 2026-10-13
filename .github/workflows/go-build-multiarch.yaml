@@ -7,15 +7,17 @@ on:
       platforms:
         description: |-
           JSON array of {"platform","goos","goarch","runner"} objects, with an optional
-          "goarm" (defaults to 7) for 32-bit ARM variants. The binary for each platform
-          is built natively on its dedicated runner, then assembled into a single multiarch image.
-          Entries with "build_only": true omit "platform" and are built and uploaded as an
-          artifact but do not contribute to the container image (useful for windows/darwin targets).
+          "goarm" for 32-bit ARM variants (e.g. "7").
+          GOARM is only exported when set, so Go's own default applies otherwise.
+          The binary for each platform is built natively on its dedicated runner, then
+          assembled into a single multiarch image.
+          Entries with "build_only": true omit "platform" and are built and uploaded
+          as an artifact but do not contribute to the container image (useful for windows/darwin targets).
           Example:
           [
             {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
-            {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"},
-            {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "runner": "ubuntu-24.04-arm"},
+            {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-26.04-arm"},
+            {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "runner": "ubuntu-26.04-arm"},
             {"build_only": true, "goos": "windows", "goarch": "amd64", "runner": "ubuntu-latest"},
             {"build_only": true, "goos": "darwin", "goarch": "amd64", "runner": "ubuntu-latest"}
           ]
@@ -80,6 +82,12 @@ on:
         required: false
         type: string
 
+      artifact-name:
+        description: Prefix for the per-platform build artifacts. Set this to a unique value when the repository runs more than one multiarch build, so their artifacts do not collide.
+        default: go-build-artifact
+        required: false
+        type: string
+
     secrets:
       COSIGN_PRIVATE_KEY:
         required: true
@@ -115,7 +123,7 @@ jobs:
     with:
       push: false
       build-command: |
-        export GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} GOARM=${{ matrix.goarm || '7' }}
+        export GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} ${{ matrix.goarm && format('GOARM={0}', matrix.goarm) }}
         ${{ inputs.build-command }}
       registry: ${{ inputs.registry }}
       registry-username: ${{ inputs.registry-username }}
@@ -124,7 +132,7 @@ jobs:
       context: ${{ inputs.context }}
       artifact-files: ${{ inputs.artifact-files }}
       runs-on: ${{ matrix.runner }}
-      artifact-name: go-build-artifact-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && format('-{0}', matrix.goarm) || '' }}
+      artifact-name: ${{ inputs.artifact-name }}-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && format('-{0}', matrix.goarm) || '' }}
     secrets: inherit
 
   go-build-multiarch:
@@ -140,8 +148,8 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v8
         with:
-          pattern: go-build-artifact-*
-          path: .
+          pattern: ${{ inputs.artifact-name }}-*
+          path: bin
           merge-multiple: true
 
       - name: Resolve platforms
@@ -172,7 +180,7 @@ jobs:
         if: inputs.artifact-files != ''
         uses: actions/upload-artifact/merge@v7
         with:
-          name: go-build-artifact
-          pattern: go-build-artifact-*
+          name: ${{ inputs.artifact-name }}
+          pattern: ${{ inputs.artifact-name }}-*
           delete-merged: true
           retention-days: 1
