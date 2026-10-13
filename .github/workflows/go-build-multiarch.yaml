@@ -82,6 +82,12 @@ on:
         required: false
         type: string
 
+      artifact-name:
+        description: Prefix for the per-platform build artifacts. Set this to a unique value when the repository runs more than one multiarch build, so their artifacts do not collide.
+        default: go-build-artifact
+        required: false
+        type: string
+
     secrets:
       COSIGN_PRIVATE_KEY:
         required: true
@@ -126,7 +132,7 @@ jobs:
       context: ${{ inputs.context }}
       artifact-files: ${{ inputs.artifact-files }}
       runs-on: ${{ matrix.runner }}
-      artifact-name: go-build-artifact-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && format('-{0}', matrix.goarm) || '' }}
+      artifact-name: ${{ inputs.artifact-name }}-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && format('-{0}', matrix.goarm) || '' }}
     secrets: inherit
 
   go-build-multiarch:
@@ -142,7 +148,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v8
         with:
-          pattern: go-build-artifact-*
+          pattern: ${{ inputs.artifact-name }}-*
           path: bin
           merge-multiple: true
 
@@ -174,7 +180,7 @@ jobs:
         if: inputs.artifact-files != ''
         uses: actions/upload-artifact/merge@v7
         with:
-          name: go-build-artifact
-          pattern: go-build-artifact-*
+          name: ${{ inputs.artifact-name }}
+          pattern: ${{ inputs.artifact-name }}-*
           delete-merged: true
           retention-days: 1
