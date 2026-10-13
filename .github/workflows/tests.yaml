@@ -27,16 +27,18 @@ jobs:
       platforms: |
         [
           {"platform": "linux/amd64", "goos": "linux", "goarch": "amd64", "runner": "ubuntu-latest"},
-          {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-24.04-arm"},
-          {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "runner": "ubuntu-24.04-arm"},
+          {"platform": "linux/arm64", "goos": "linux", "goarch": "arm64", "runner": "ubuntu-26.04-arm"},
+          {"platform": "linux/arm/v7", "goos": "linux", "goarch": "arm", "goarm": "7", "runner": "ubuntu-26.04-arm"},
           {"build_only": true, "goos": "windows", "goarch": "amd64", "runner": "ubuntu-latest"},
           {"build_only": true, "goos": "darwin", "goarch": "amd64", "runner": "ubuntu-latest"}
         ]
-      build-command: go build -o actions-common-${GOOS}-${GOARCH} .
+      build-command: |
+        mkdir -p bin
+        go build -o bin/actions-common-${GOOS}-${GOARCH}${GOARM:+-v${GOARM}} .
       dockerfile: Dockerfile.multiarch
       image-name: ${{ github.repository_owner }}/multiarch-test
       artifact-files: |
-        actions-common-*
+        bin/actions-common-*
 
   container-build:
     uses: ./.github/workflows/container-build.yaml
