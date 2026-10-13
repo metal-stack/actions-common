@@ -10,6 +10,12 @@ on:
         required: false
         type: string
 
+      lint-args:
+        description: Additional arguments passed to golangci-lint (e.g. --build-tags client).
+        required: false
+        default: ""
+        type: string
+
 jobs:
   go-lint:
     name: Go Lint
@@ -30,3 +36,5 @@ jobs:
 
       - name: Lint Go
         uses: golangci/golangci-lint-action@v9
+        with:
+          args: ${{ inputs.lint-args }}

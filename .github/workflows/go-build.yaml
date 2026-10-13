@@ -68,6 +68,12 @@ on:
         required: false
         type: string
 
+      lint-args:
+        description: Additional arguments passed to golangci-lint (e.g. --build-tags client).
+        required: false
+        default: ""
+        type: string
+
       artifact-files:
         description: Allows uploading artifacts in order to re-use them in subsequent jobs. You can pass a file pattern or directory here.
         required: false
@@ -98,6 +104,7 @@ jobs:
     if: inputs.lint
     with:
       runs-on: ${{ inputs.runs-on }}
+      lint-args: ${{ inputs.lint-args }}
 
   go-test:
     uses: ./.github/workflows/go-test.yaml
