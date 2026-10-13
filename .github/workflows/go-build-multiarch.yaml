@@ -40,6 +40,12 @@ on:
         default: true
         type: boolean
 
+      lint-args:
+        description: Additional arguments passed to golangci-lint (e.g. --build-tags client).
+        required: false
+        default: ""
+        type: string
+
       build-command:
         description: The command used to build the Go binary for one platform. The target platform is exposed via the GOOS and GOARCH environment variables.
         required: false
@@ -106,6 +112,8 @@ jobs:
   go-lint:
     uses: ./.github/workflows/go-lint.yaml
     if: inputs.lint
+    with:
+      lint-args: ${{ inputs.lint-args }}
 
   go-test:
     uses: ./.github/workflows/go-test.yaml
