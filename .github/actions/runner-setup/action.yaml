@@ -1,0 +1,10 @@
+---
+name: Runner Setup
+description: Used for testing.
+
+runs:
+  using: composite
+  steps:
+    - name: Runner setup
+      shell: bash
+      run: echo "repository runner setup executed"

@@ -88,6 +88,8 @@ Builds a Go binary and publishes it as a docker container image, including:
 - Embeds an SBOM into the resulting Docker image using Buildx.
 - Signs the resulting container image using [cosign](https://github.com/sigstore/cosign).
 
+If present in the repository, a `.github/actions/runner-setup/action.yaml` composite action is executed after checkout.
+
 `go-build.yaml` combines the `go-lint.yaml`, `go-test.yaml` and `go-compile.yaml` workflows described below. Call those building blocks directly if you only need a single step.
 
 The image is tagged according to the [image tag formats](#image-tag-formats).
@@ -131,6 +133,8 @@ Note that `platform` entries can use `build_only: true`: the binary is then buil
 
 For linting and testing, separate jobs run once on `ubuntu-latest`.
 
+If present in the repository, a `.github/actions/runner-setup/action.yaml` composite action is executed after checkout.
+
 The rest of the input parameters are identical to `go-build`.
 
 ```yaml
@@ -154,6 +158,8 @@ jobs:
 - Lints a Golang repository using [golangci-lint-action](https://github.com/golangci/golangci-lint-action).
 - Verifies formatting with `go fmt`.
 
+If present in the repository, a `.github/actions/runner-setup/action.yaml` composite action is executed after checkout.
+
 ```yaml
 jobs:
   go-lint:
@@ -165,6 +171,8 @@ jobs:
 ### Go Test `.github/workflows/go-test.yaml`
 
 - Tests a Golang repository
+
+If present in the repository, a `.github/actions/runner-setup/action.yaml` composite action is executed after checkout.
 
 ```yaml
 jobs:
@@ -181,6 +189,8 @@ Builds a Go binary and publishes it as a docker container image, including:
 
 - Embeds an SBOM into the resulting Docker image using Buildx.
 - Signs the resulting container image using [cosign](https://github.com/sigstore/cosign).
+
+If present in the repository, a `.github/actions/runner-setup/action.yaml` composite action is executed after checkout.
 
 The image is tagged according to the [image tag formats](#image-tag-formats).
 
@@ -208,6 +218,8 @@ Builds a container and publishes it as a docker container image, including:
 
 - Embeds an SBOM into the resulting Docker image using Buildx.
 - Signs the resulting container image using [cosign](https://github.com/sigstore/cosign).
+
+If present in the repository, a `.github/actions/runner-setup/action.yaml` composite action is executed after checkout.
 
 The image is tagged according to the [image tag formats](#image-tag-formats).
 

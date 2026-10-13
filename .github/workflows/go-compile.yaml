@@ -82,6 +82,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Run repository runner setup
+        if: hashFiles('.github/actions/runner-setup/action.y*ml') != ''
+        uses: ./.github/actions/runner-setup
+
       - name: Setup Go
         uses: actions/setup-go@v7
         with:
