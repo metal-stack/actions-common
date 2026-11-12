@@ -42,6 +42,18 @@ inputs:
     description: Attests the built container image with an SBOM.
     required: false
     default: "true"
+    outputs:
+
+outputs:
+  push-image:
+    description: The place where the container was pushed.
+    value: ${{ inputs.registry }}/${{ inputs.image-name }}
+  push-tag:
+    description: The tag of the pushed container.
+    value: ${{ steps.tag.outputs.container_tag }}
+  push-digest:
+    description: The tag of the pushed container.
+    value: ${{ steps.build.outputs.digest }}
 
 runs:
   using: composite

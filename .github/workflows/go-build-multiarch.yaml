@@ -104,9 +104,9 @@ on:
         required: false
 
     outputs:
-        go-build-artifacts:
-          description: The uploaded build artifacts in case artifact-files were provided.
-          value: ${{ jobs.go-build-multiarch.outputs.go-build-artifacts }}
+      go-build-artifacts:
+        description: The uploaded build artifacts in case artifact-files were provided.
+        value: ${{ jobs.go-build-multiarch.outputs.go-build-artifacts }}
 
 jobs:
   go-lint:

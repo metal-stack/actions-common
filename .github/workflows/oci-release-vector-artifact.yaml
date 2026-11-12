@@ -35,10 +35,20 @@ on:
         description: The registry password to login with. Falls back to the GITHUB_TOKEN CI secret.
         required: false
 
+    outputs:
+      push-image:
+        description: The place where the oci artifact was pushed.
+        value: ${{ inputs.registry }}/${{ inputs.image-name }}
+      push-tag:
+        description: The tag of the pushed oci artifact.
+        value: ${{ jobs.oci-release-vector-artifact.outputs.push-tag }}
+
 jobs:
   oci-release-vector-artifact:
     name: OCI Release Vector Artifact
     runs-on: ubuntu-latest
+    outputs:
+      push-tag: ${{ steps.tag.outputs.container_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

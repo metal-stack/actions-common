@@ -94,9 +94,18 @@ on:
         required: false
 
     outputs:
-        go-build-artifacts:
-          description: The uploaded build artifacts in case artifact-files were provided.
-          value: ${{ jobs.go-build.outputs.go-build-artifacts }}
+      go-build-artifacts:
+        description: The uploaded build artifacts in case artifact-files were provided.
+        value: ${{ jobs.go-build.outputs.go-build-artifacts }}
+      push-image:
+        description: The place where the container was pushed.
+        value: ${{ jobs.go-build.outputs.push-image }}
+      push-tag:
+        description: The tag of the pushed container.
+        value: ${{ jobs.go-build.outputs.push-tag }}
+      push-digest:
+        description: The tag of the pushed container.
+        value: ${{ jobs.go-build.outputs.push-digest }}
 
 jobs:
   go-lint:
