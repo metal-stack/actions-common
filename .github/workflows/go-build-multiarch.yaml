@@ -82,6 +82,11 @@ on:
         default: .
         required: false
         type: string
+      target:
+        description: The target build stage of the dockerfile to build.
+        default: ""
+        required: false
+        type: string
 
       artifact-files:
         description: Allows uploading artifacts in order to re-use them in subsequent jobs. You can pass a file pattern or directory here.
@@ -138,6 +143,7 @@ jobs:
       image-name: ${{ inputs.image-name }}
       dockerfile: ${{ inputs.dockerfile }}
       context: ${{ inputs.context }}
+      target: ${{ inputs.target }}
       artifact-files: ${{ inputs.artifact-files }}
       runs-on: ${{ matrix.runner }}
       artifact-name: ${{ inputs.artifact-name }}-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && format('-{0}', matrix.goarm) || '' }}
@@ -181,6 +187,7 @@ jobs:
           image-name: ${{ inputs.image-name }}
           dockerfile: ${{ inputs.dockerfile }}
           context: ${{ inputs.context }}
+          target: ${{ inputs.target }}
           platforms: ${{ steps.meta.outputs.platforms }}
 
       - name: Merge build artifacts
