@@ -40,6 +40,11 @@ on:
         default: .
         required: false
         type: string
+      target:
+        description: The target build stage of the dockerfile to build.
+        default: ""
+        required: false
+        type: string
 
       runs-on:
         description: The runner on which this workflow is executed.
@@ -109,6 +114,7 @@ jobs:
           image-name: ${{ inputs.image-name }}
           dockerfile: ${{ inputs.dockerfile }}
           context: ${{ inputs.context }}
+          target: ${{ inputs.target }}
           sbom: true
         if: inputs.push
 

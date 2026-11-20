@@ -34,6 +34,10 @@ inputs:
     description: The build context used for building the container.
     default: .
     required: false
+  target:
+    description: The target build stage of the dockerfile to build.
+    default: ""
+    required: false
   platforms:
     description: The platforms for building the container.
     default: linux/amd64
@@ -78,6 +82,7 @@ runs:
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
+          target: ${{ inputs.target }}
           platforms: ${{ inputs.platforms }}
           push: true
           sbom: ${{ inputs.sbom }}
@@ -88,6 +93,7 @@ runs:
         with:
           context: ${{ inputs.context }}
           file: ${{ inputs.dockerfile }}
+          target: ${{ inputs.target }}
           platforms: ${{ inputs.platforms }}
           push: true
           sbom: ${{ inputs.sbom }}

@@ -111,6 +111,7 @@ jobs:
       image-name: ${{ github.repository }}
       context: .
       dockerfile: Dockerfile
+      target: ""
       push: true
       runs-on: ubuntu-latest
       artifact-files: ""
@@ -206,6 +207,7 @@ jobs:
       image-name: ${{ github.repository }}
       context: .
       dockerfile: Dockerfile
+      target: ""
       push: true
       runs-on: ubuntu-latest
       artifact-files: ""
@@ -237,6 +239,7 @@ jobs:
       image-name: ${{ github.repository }}
       context: .
       dockerfile: Dockerfile
+      target: ""
       runs-on: ubuntu-latest
       artifact-files: ""
 ```
