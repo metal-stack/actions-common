@@ -42,7 +42,6 @@ inputs:
     description: Attests the built container image with an SBOM.
     required: false
     default: "true"
-    outputs:
 
 outputs:
   push-image:
@@ -52,7 +51,7 @@ outputs:
     description: The tag of the pushed container.
     value: ${{ steps.tag.outputs.container_tag }}
   push-digest:
-    description: The tag of the pushed container.
+    description: The digest of the pushed container.
     value: ${{ steps.build.outputs.digest }}
 
 runs:
